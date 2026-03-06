@@ -1,0 +1,159 @@
+{
+  "permissions": {
+    "allow": [
+      "Read",
+      "Bash(pnpm build*)",
+      "Bash(pnpm check*)",
+      "Bash(pnpm tsgo*)",
+      "Bash(pnpm lint*)",
+      "Bash(pnpm format:*)",
+      "Bash(pnpm test*)",
+      "Bash(pnpm exec vitest *)",
+      "Bash(pnpm openclaw *)",
+      "Bash(pnpm dev*)",
+      "Bash(pnpm gateway:dev*)",
+      "Bash(pnpm gateway:watch*)",
+      "Bash(pnpm ui:*)",
+      "Bash(pnpm install*)",
+      "Bash(pnpm protocol:*)",
+      "Bash(pnpm release:check*)",
+      "Bash(node --import tsx scripts/*)",
+      "Bash(scripts/committer *)",
+      "Bash(.claude/skills/*/scripts/*.sh*)",
+      "Bash(git status*)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git branch*)",
+      "Bash(git show*)",
+      "Bash(git rev-parse*)",
+      "Bash(git describe*)",
+      "Bash(git fetch*)",
+      "Bash(git stash list*)",
+      "Bash(grep *)",
+      "Bash(find *)",
+      "Bash(cat *)",
+      "Bash(head *)",
+      "Bash(tail *)",
+      "Bash(ls *)",
+      "Bash(tree *)",
+      "Bash(wc *)",
+      "Bash(sort *)",
+      "Bash(uniq *)",
+      "Bash(diff *)",
+      "Bash(mkdir *)",
+      "Bash(basename *)",
+      "Bash(dirname *)",
+      "Bash(realpath *)",
+      "Bash(which *)",
+      "Bash(gh pr view*)",
+      "Bash(gh pr list*)",
+      "Bash(gh pr checks*)",
+      "Bash(gh issue view*)",
+      "Bash(gh issue list*)",
+      "Bash(gh api *)",
+      "Bash(gh auth status*)",
+      "Write(src/**)",
+      "Write(extensions/**)",
+      "Write(docs/**)",
+      "Write(skills/**)",
+      "Write(ui/src/**)",
+      "Write(.claude/**)",
+      "Write(plans/**)",
+      "Write(CHANGELOG.md)"
+    ],
+    "deny": [
+      "Read(.env*)",
+      "Read(**/.env*)",
+      "Read(**/secrets/**)",
+      "Read(**/*credentials*)",
+      "Read(**/*password*)",
+      "Bash(rm -rf *)",
+      "Bash(rm -r *)",
+      "Bash(sudo *)",
+      "Bash(curl *)",
+      "Bash(wget *)",
+      "Bash(git push --force*)",
+      "Bash(git push -f *)",
+      "Bash(git reset --hard*)",
+      "Bash(git clean -f*)",
+      "Bash(git checkout -- .)",
+      "Bash(npx *)",
+      "Write(.github/workflows/**)",
+      "Write(Dockerfile*)",
+      "Write(docker-compose.yml)",
+      "Write(apps/macos/**)",
+      "Write(apps/ios/**)",
+      "Write(apps/android/**)",
+      "Write(apps/shared/**)",
+      "Write(Swabble/**)",
+      "Write(vendor/**)",
+      "Write(docs/zh-CN/**)",
+      "Write(docs/ja-JP/**)",
+      "Write(docs/.i18n/**)",
+      "Write(pnpm-lock.yaml)",
+      "Write(src/canvas-host/a2ui/.bundle.hash)",
+      "Write(patches/**)",
+      "Write(node_modules/**)"
+    ],
+    "ask": [
+      "Bash(git commit*)",
+      "Bash(git push*)",
+      "Bash(git checkout main*)",
+      "Bash(git checkout master*)",
+      "Bash(git merge*)",
+      "Bash(git rebase*)",
+      "Bash(git stash drop*)",
+      "Bash(git stash pop*)",
+      "Bash(git tag *)",
+      "Bash(gh pr create*)",
+      "Bash(gh pr merge*)",
+      "Bash(gh pr close*)",
+      "Bash(gh issue create*)",
+      "Bash(gh issue close*)",
+      "Write(package.json)",
+      "Write(tsconfig.json)",
+      "Write(tsdown.config.ts)",
+      "Write(vitest.config.ts)",
+      "Write(vitest.*.config.ts)",
+      "Write(.oxlintrc.json)",
+      "Write(.oxfmtrc.jsonc)",
+      "Write(.github/labeler.yml)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if echo \"$CLAUDE_TOOL_INPUT_file_path\" | grep -qE '\\.(ts|tsx)$'; then if grep -q '@ts-nocheck' \"$CLAUDE_TOOL_INPUT_file_path\" 2>/dev/null; then echo 'BLOCKED: @ts-nocheck is forbidden — fix root cause instead' && exit 2; fi; fi"
+          }
+        ]
+      },
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if echo \"$CLAUDE_TOOL_INPUT_file_path\" | grep -qE 'src/agents/(tools|schema)/.*\\.ts$'; then if grep -q 'Type\\.Union' \"$CLAUDE_TOOL_INPUT_file_path\" 2>/dev/null; then echo 'BLOCKED: Type.Union is forbidden in tool schemas — use stringEnum/optionalStringEnum instead' && exit 2; fi; fi"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if echo \"$CLAUDE_TOOL_INPUT_command\" | grep -qE '^rm\\s+-(rf|fr)\\s'; then echo 'BLOCKED: recursive delete is not allowed' && exit 2; fi"
+          }
+        ]
+      }
+    ]
+  },
+  "env": {
+    "NODE_OPTIONS": "--max-old-space-size=4096"
+  }
+}
