@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "github": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_PERSONAL_ACCESS_TOKEN}"
+      },
+      "_comment": "GitHub MCP server for enhanced repo, PR, and issue operations beyond gh CLI. Install: npm install -g @modelcontextprotocol/server-github. Set GITHUB_PERSONAL_ACCESS_TOKEN env var."
+    }
+  }
+}
