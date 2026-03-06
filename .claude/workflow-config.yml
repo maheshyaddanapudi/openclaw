@@ -1,0 +1,17 @@
+# Developer Workflow Configuration
+# Controls Claude Code behavior in this repository.
+# Read via @import in CLAUDE.md. Changes take effect immediately.
+
+# When true, Claude pauses between major phases (plan → implement → test → review)
+# and asks for confirmation. Set to false once comfortable with autonomous workflows.
+human_in_loop_at_handoff: true
+
+# When true, Claude suggests 2-4 relevant next actions after completing a task.
+suggest_next_actions: true
+
+# Maximum auto-remediation cycles when human_in_loop_at_handoff is false.
+# After a reviewer returns REQUEST_CHANGES, the orchestrator feeds findings back
+# to the implementer and re-reviews, up to this many times. If critical issues
+# persist after max cycles, the orchestrator stops and flags for human review.
+# Set to 0 to disable auto-remediation (reviewer findings are always reported to human).
+max_review_remediate_cycles: 2
