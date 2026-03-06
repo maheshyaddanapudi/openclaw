@@ -2,6 +2,8 @@
 
 OpenClaw is a multi-channel AI gateway (TypeScript ESM, Node 22+, pnpm 10) that bridges 40+ messaging platforms to LLM providers. It ships as a CLI/gateway daemon with native apps (macOS/iOS SwiftUI, Android Kotlin Compose) and a Lit web UI. Extensions live under `extensions/` as pnpm workspace packages.
 
+> **Note:** `AGENTS.md` at the repo root is the project's internal contributor/maintainer guide — it is NOT Claude Code configuration. This `CLAUDE.md` file is the Claude Code configuration.
+
 ## Essential Commands
 
 ```bash
