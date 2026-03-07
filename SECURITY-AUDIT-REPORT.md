@@ -44,7 +44,7 @@ This report consolidates findings from 4 rounds of parallel security assessments
 | **MEDIUM** | 31 | 20+ (public) | 33 new code | 1 CVE + 22 GHSAs | 107+ |
 | **LOW** | 45 | — | 31 (incl. 7 positive) | — | 76+ |
 
-**Total unique public advisories: 58+ CVEs + 103+ GHSAs + 7 government/institutional advisories + 5 major attack campaigns + 10 industry vendor assessments**
+**Total unique public advisories: 66+ CVEs + 103+ GHSAs + 7 government/institutional advisories + 6 major attack campaigns + 10 industry vendor assessments + MITRE ATLAS investigation**
 
 ### Top 3 Systemic Risks
 
@@ -1106,6 +1106,19 @@ Root cause: Docker setup defaults to `0.0.0.0:18789` (all interfaces). 93.4% of 
 | CVE-2026-28478 | HIGH | HIGH | DoS via unbounded webhook request body buffering — memory exhaustion before auth checks | 2026.2.13 |
 | CVE-2026-28462 | HIGH | HIGH | Path traversal in browser control API output paths — write screenshots to arbitrary filesystem locations | 2026.2.13 |
 
+**Additional CVEs from R3-4 gap research (8 more):**
+
+| CVE | CVSS | Severity | Description | Fixed In |
+|-----|------|----------|-------------|----------|
+| CVE-2026-28446 | 9.8 | CRITICAL | Pre-auth RCE in voice-call transcription pipeline — crafted audio payload gives shell access | 2026.2.1 |
+| CVE-2026-28463 | 8.4 | HIGH | Shell expansion bypass in exec-approvals allowlist — pre-expansion tokens pass validation but shell expansion enables arbitrary file reads | — |
+| CVE-2026-26320 | 7.1 | HIGH | macOS deep link `openclaw://agent` confirmation dialog truncates at 240 chars but executes full payload | 2026.2.14 |
+| CVE-2026-27002 | HIGH | HIGH | Docker sandbox configuration injection — dangerous Docker options (bind mounts, host networking) injectable, enabling container escape | 2026.2.15 |
+| CVE-2026-27008 | HIGH | HIGH | Skill install path traversal — `targetDir` in skill frontmatter resolves outside per-skill tools directory | 2026.2.15 |
+| CVE-2026-26316 | HIGH | HIGH | BlueBubbles iMessage plugin accepts webhook requests as authenticated based solely on loopback TCP peer address | 2026.2.13 |
+| CVE-2026-26972 | HIGH | HIGH | Browser download helpers accept unsanitized output path, enabling path traversal | 2026.2.13 |
+| CVE-2026-22708 | HIGH | HIGH | Indirect prompt injection via web browsing — CSS-invisible instructions in web content interpreted as agent commands | — |
+
 ### 10.2 New GitHub Security Advisories (48 Previously Unreported)
 
 #### CRITICAL GHSAs
@@ -1227,7 +1240,23 @@ Root cause: Docker setup defaults to `0.0.0.0:18789` (all interfaces). 93.4% of 
 8. **Canvas auth bypass** — Complete authentication bypass in Canvas subsystem (GHSA-vvjh-f6p9-5vcf)
 9. **macOS basename matching** — Allowlist checks basename only; any path with matching name passes (GHSA-7f4q-9rqh-x36p)
 
-### 10.8 GDPR & Compliance Concerns
+### 10.8 MITRE ATLAS Investigation
+
+MITRE published the first ATLAS investigation specifically examining OpenClaw (Feb 2026), discovering 7 new techniques unique to OpenClaw mapped to ATLAS tactics including direct/indirect LLM prompt injection, AI agent tool invocation, and agentic configuration modification. ATT&CK mappings for the Cline/OpenClaw supply chain: T1195.002, T1059.003, T1546.003, T1547.001, T1552.001, T1071.001.
+
+### 10.9 Cline CLI Supply Chain Attack
+
+On Feb 17, 2026, a compromised npm publish token was used to push `cline@2.3.0` with `postinstall: npm install -g openclaw@latest`, reaching ~4,000 downloads in 8 hours. Root cause: prompt injection in Cline's Claude Issue Triage workflow → GitHub Actions cache poisoning → credential theft. This represents a novel AI-to-supply-chain attack vector.
+
+### 10.10 Tenable Nessus Detection Plugins
+
+4 Nessus plugins now detect vulnerable OpenClaw installations:
+- **Plugin 299795**: OpenClaw < 2026.2.13 (CVE-2026-26316, CVE-2026-26972)
+- **Plugin 299796**: OpenClaw 2026.2.6-2026.2.14 deep link truncation (CVE-2026-26320)
+- **Plugin 299797**: OpenClaw < 2026.2.14 (CVE-2026-26322, CVE-2026-26319, CVE-2026-26323)
+- **Plugin 299798**: OpenClaw < 2026.2.15 (CVE-2026-27001, CVE-2026-27002, CVE-2026-27008)
+
+### 10.11 GDPR & Compliance Concerns
 
 1. Dutch DPA regulatory warning against use with personal/confidential data
 2. No right-to-erasure workflow — sessions accumulate indefinitely (GDPR Article 17 risk)
