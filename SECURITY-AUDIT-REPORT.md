@@ -1181,6 +1181,10 @@ Root cause: Docker setup defaults to `0.0.0.0:18789` (all interfaces). 93.4% of 
 | GHSA-rq6g-px6m-c248 | MOD | Google Chat webhook cross-account policy misrouting |
 | GHSA-g27f-9qjv-22pm | MOD | Log poisoning via WebSocket headers — indirect prompt injection |
 | GHSA-6g25-pc82-vfwp | MOD | PKCE verifier exposure in macOS OAuth — `code_verifier` in URL `state` parameter |
+| GHSA-mv9j-6xhh-g383 | MOD | Unauthenticated Nostr profile management HTTP endpoints — remote profile/config tampering |
+| GHSA-xc7w-v5x6-cc87 | HIGH | Reverse proxy auth bypass — without `gateway.trustedProxies`, all proxy connections treated as localhost, auto-approving device pairing |
+| GHSA-4685-c5cp-vp95 | HIGH | safeBins stdin-only bypass — additional allowlist circumvention vector |
+| GHSA-3x3x-h76w-hp98 | HIGH | Exec allowlist short-option bypass — short flags evade long-option validation |
 
 ### 10.3 Government and Institutional Actions (7 Authorities)
 
