@@ -23,6 +23,14 @@ type ResolvePinnedHostnameImpl = typeof resolvePinnedHostname;
 /** Maximum download size in bytes. Configurable via OPENCLAW_MEDIA_DOWNLOAD_MAX_BYTES. Default 500MB. */
 const DEFAULT_DOWNLOAD_MAX_BYTES = 500 * 1024 * 1024;
 
+/** Headers that must be stripped when following a cross-origin redirect. */
+const CROSS_ORIGIN_SENSITIVE_HEADERS = [
+  "authorization",
+  "proxy-authorization",
+  "cookie",
+  "cookie2",
+];
+
 function resolveDownloadMaxBytes(): number {
   const raw = process.env.OPENCLAW_MEDIA_DOWNLOAD_MAX_BYTES?.trim();
   if (!raw) {
@@ -177,8 +185,23 @@ async function downloadToFile(
               reject(new Error(`Redirect loop or missing Location header`));
               return;
             }
-            const redirectUrl = new URL(location, url).href;
-            resolve(downloadToFile(redirectUrl, dest, headers, maxRedirects - 1));
+            const redirectTarget = new URL(location, url);
+            const redirectUrl = redirectTarget.href;
+            // Strip sensitive headers on cross-origin redirects
+            let redirectHeaders = headers;
+            if (redirectHeaders && redirectTarget.origin !== parsedUrl.origin) {
+              redirectHeaders = { ...redirectHeaders };
+              for (const key of CROSS_ORIGIN_SENSITIVE_HEADERS) {
+                delete redirectHeaders[key];
+                // Also delete case-insensitive variants
+                for (const hk of Object.keys(redirectHeaders)) {
+                  if (hk.toLowerCase() === key) {
+                    delete redirectHeaders[hk];
+                  }
+                }
+              }
+            }
+            resolve(downloadToFile(redirectUrl, dest, redirectHeaders, maxRedirects - 1));
             return;
           }
           if (!res.statusCode || res.statusCode >= 400) {

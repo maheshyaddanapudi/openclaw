@@ -174,12 +174,8 @@ export const logsHandlers: GatewayRequestHandlers = {
       });
       // Strip home directory from file path to avoid leaking filesystem layout
       respond(true, { file: displayPath(file), ...result }, undefined);
-    } catch (err) {
-      respond(
-        false,
-        undefined,
-        errorShape(ErrorCodes.UNAVAILABLE, `log read failed: ${String(err)}`),
-      );
+    } catch {
+      respond(false, undefined, errorShape(ErrorCodes.UNAVAILABLE, "log read failed"));
     }
   },
 };
