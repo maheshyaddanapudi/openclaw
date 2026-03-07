@@ -28,6 +28,7 @@ import {
 import { enqueueSystemEvent } from "../../infra/system-events.js";
 import { logDebug } from "../../logger.js";
 import { getChildLogger } from "../../logging.js";
+import { redactIdentifier } from "../../logging/redact-identifier.js";
 import { buildPairingReply } from "../../pairing/pairing-messages.js";
 import { resolveAgentRoute } from "../../routing/resolve-route.js";
 import { DEFAULT_ACCOUNT_ID, resolveAgentIdFromSessionKey } from "../../routing/session-key.js";
@@ -734,7 +735,9 @@ export async function preflightDiscordMessage(
 
   if (isGuildMessage && hasAccessRestrictions && !memberAllowed) {
     logDebug(`[discord-preflight] drop: member not allowed`);
-    logVerbose(`Blocked discord guild sender ${sender.id} (not in users/roles allowlist)`);
+    logVerbose(
+      `Blocked discord guild sender ${redactIdentifier(sender.id)} (not in users/roles allowlist)`,
+    );
     return null;
   }
 

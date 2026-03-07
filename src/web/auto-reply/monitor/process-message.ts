@@ -236,7 +236,7 @@ export async function processMessage(params: {
   const fromDisplay = params.msg.chatType === "group" ? conversationId : params.msg.from;
   const kindLabel = params.msg.mediaType ? `, ${params.msg.mediaType}` : "";
   whatsappInboundLog.info(
-    `Inbound message ${fromDisplay} -> ${redactIdentifier(params.msg.to)} (${params.msg.chatType}${kindLabel}, ${combinedBody.length} chars)`,
+    `Inbound message ${redactIdentifier(fromDisplay)} -> ${redactIdentifier(params.msg.to)} (${params.msg.chatType}${kindLabel}, ${combinedBody.length} chars)`,
   );
   if (shouldLogVerbose()) {
     whatsappInboundLog.debug(`Inbound body: ${elide(combinedBody, 400)}`);

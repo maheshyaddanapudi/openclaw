@@ -3,6 +3,7 @@ import { loadConfig } from "../config/config.js";
 import type { OpenClawConfig } from "../config/types.openclaw.js";
 import { logVerbose } from "../globals.js";
 import { recordChannelActivity } from "../infra/channel-activity.js";
+import { redactIdentifier } from "../logging/redact-identifier.js";
 import { resolveLineAccount } from "./accounts.js";
 import { resolveLineChannelAccessToken } from "./channel-access-token.js";
 import type { LineSendResult } from "./types.js";
@@ -416,7 +417,7 @@ export async function showLoadingAnimation(
       chatId: normalizeTarget(chatId),
       loadingSeconds: opts.loadingSeconds ?? 20,
     });
-    logVerbose(`line: showing loading animation to ${chatId}`);
+    logVerbose(`line: showing loading animation to ${redactIdentifier(chatId)}`);
   } catch (err) {
     // Loading animation may fail for groups or unsupported clients - ignore
     logVerbose(`line: loading animation failed (non-fatal): ${String(err)}`);
@@ -457,7 +458,7 @@ export async function getUserProfile(
 
     return result;
   } catch (err) {
-    logVerbose(`line: failed to fetch profile for ${userId}: ${String(err)}`);
+    logVerbose(`line: failed to fetch profile for ${redactIdentifier(userId)}: ${String(err)}`);
     return null;
   }
 }

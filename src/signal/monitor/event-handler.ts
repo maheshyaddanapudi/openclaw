@@ -364,7 +364,7 @@ export function createSignalEventHandler(deps: SignalEventHandlerDeps) {
     }
     const emojiLabel = params.reaction.emoji?.trim() || "emoji";
     const senderName = params.envelope.sourceName ?? params.senderDisplay;
-    logVerbose(`signal reaction: ${emojiLabel} from ${senderName}`);
+    logVerbose(`signal reaction: ${emojiLabel} from ${redactIdentifier(senderName)}`);
     const groupId = params.reaction.groupInfo?.groupId ?? undefined;
     const groupName = params.reaction.groupInfo?.groupName ?? undefined;
     const isGroup = Boolean(groupId);

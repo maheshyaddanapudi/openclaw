@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 import { messagingApi } from "@line/bot-sdk";
 import { loadConfig } from "../config/config.js";
 import { logVerbose } from "../globals.js";
+import { redactIdentifier } from "../logging/redact-identifier.js";
 import { resolveLineAccount } from "./accounts.js";
 import { datetimePickerAction, messageAction, postbackAction, uriAction } from "./actions.js";
 import { resolveLineChannelAccessToken } from "./channel-access-token.js";
@@ -182,7 +183,7 @@ export async function linkRichMenuToUser(
   await client.linkRichMenuIdToUser(userId, richMenuId);
 
   if (opts.verbose) {
-    logVerbose(`line: linked rich menu ${richMenuId} to user ${userId}`);
+    logVerbose(`line: linked rich menu ${richMenuId} to user ${redactIdentifier(userId)}`);
   }
 }
 
@@ -220,7 +221,7 @@ export async function unlinkRichMenuFromUser(
   await client.unlinkRichMenuIdFromUser(userId);
 
   if (opts.verbose) {
-    logVerbose(`line: unlinked rich menu from user ${userId}`);
+    logVerbose(`line: unlinked rich menu from user ${redactIdentifier(userId)}`);
   }
 }
 

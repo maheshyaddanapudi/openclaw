@@ -27,6 +27,7 @@ import { recordInboundSession } from "../../../channels/session.js";
 import { readSessionUpdatedAt, resolveStorePath } from "../../../config/sessions.js";
 import { logVerbose, shouldLogVerbose } from "../../../globals.js";
 import { enqueueSystemEvent } from "../../../infra/system-events.js";
+import { redactIdentifier } from "../../../logging/redact-identifier.js";
 import { resolveAgentRoute } from "../../../routing/resolve-route.js";
 import { resolveThreadSessionKeys } from "../../../routing/session-key.js";
 import { resolvePinnedMainDmOwnerFromAllowlist } from "../../../security/dm-policy-shared.js";
@@ -415,7 +416,9 @@ export async function prepareSlackMessage(params: {
       })
     : true;
   if (isRoom && !channelUserAuthorized) {
-    logVerbose(`Blocked unauthorized slack sender ${senderId} (not in channel users)`);
+    logVerbose(
+      `Blocked unauthorized slack sender ${redactIdentifier(senderId)} (not in channel users)`,
+    );
     return null;
   }
 

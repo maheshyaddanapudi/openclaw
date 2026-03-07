@@ -13,6 +13,7 @@ import { isDiagnosticFlagEnabled } from "../infra/diagnostic-flags.js";
 import { formatErrorMessage, formatUncaughtError } from "../infra/errors.js";
 import { createTelegramRetryRunner } from "../infra/retry-policy.js";
 import type { RetryConfig } from "../infra/retry.js";
+import { redactIdentifier } from "../logging/redact-identifier.js";
 import { redactSensitiveText } from "../logging/redact.js";
 import { createSubsystemLogger } from "../logging/subsystem.js";
 import type { MediaKind } from "../media/constants.js";
@@ -833,7 +834,9 @@ export async function deleteMessageTelegram(
     shouldRetry: (err) => isRecoverableTelegramNetworkError(err, { context: "send" }),
   });
   await requestWithDiag(() => api.deleteMessage(chatId, messageId), "deleteMessage");
-  logVerbose(`[telegram] Deleted message ${messageId} from chat ${chatId}`);
+  logVerbose(
+    `[telegram] Deleted message ${messageId} from chat ${redactIdentifier(String(chatId))}`,
+  );
   return { ok: true };
 }
 
@@ -944,7 +947,7 @@ export async function editMessageTelegram(
     }
   }
 
-  logVerbose(`[telegram] Edited message ${messageId} in chat ${chatId}`);
+  logVerbose(`[telegram] Edited message ${messageId} in chat ${redactIdentifier(String(chatId))}`);
   return { ok: true, messageId: String(messageId), chatId };
 }
 

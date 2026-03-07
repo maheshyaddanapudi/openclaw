@@ -36,6 +36,7 @@ import type {
 } from "../config/types.js";
 import { danger, logVerbose } from "../globals.js";
 import { getChildLogger } from "../logging.js";
+import { redactIdentifier } from "../logging/redact-identifier.js";
 import { getAgentScopedMediaLocalRoots } from "../media/local-roots.js";
 import {
   executePluginCommand,
@@ -205,7 +206,9 @@ async function resolveTelegramCommandAuth(params: {
       : (telegramCfg.dmPolicy ?? "pairing");
   const requireTopic = (groupConfig as TelegramDirectConfig | undefined)?.requireTopic;
   if (!isGroup && requireTopic === true && dmThreadId == null) {
-    logVerbose(`Blocked telegram command in DM ${chatId}: requireTopic=true but no topic present`);
+    logVerbose(
+      `Blocked telegram command in DM ${redactIdentifier(String(chatId))}: requireTopic=true but no topic present`,
+    );
     return null;
   }
   // For DMs, prefer per-DM/topic allowFrom (groupAllowOverride) over account-level allowFrom
