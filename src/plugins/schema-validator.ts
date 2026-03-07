@@ -18,9 +18,10 @@ function getAjv(): AjvLike {
     typeof ajvModule.default === "function"
       ? ajvModule.default
       : (ajvModule as unknown as new (opts?: object) => AjvLike);
+  // TODO: change strict to `true` after validating all plugin schemas pass strict mode
   ajvSingleton = new AjvCtor({
     allErrors: true,
-    strict: false,
+    strict: "log",
     removeAdditional: false,
   });
   return ajvSingleton;

@@ -11,12 +11,12 @@
 
 Eight rounds of security auditing identified **86 actionable findings** across the OpenClaw codebase, extensions, and dependency tree:
 
-| Severity | Count | Status |
-|----------|-------|--------|
-| CRITICAL | 1 | Remediation planned (Phase 8) |
-| HIGH | 24 | Remediation planned (Phases 1-2, 9-10, 16-20, 28-35, 48-55) |
-| MEDIUM | 40 | Remediation planned (Phases 3-7, 11-15, 21-27, 36-47, 56-65) |
-| LOW | 21 | Accepted risk / deferred |
+| Severity | Count | Status                                                       |
+| -------- | ----- | ------------------------------------------------------------ |
+| CRITICAL | 1     | Remediation planned (Phase 8)                                |
+| HIGH     | 24    | Remediation planned (Phases 1-2, 9-10, 16-20, 28-35, 48-55)  |
+| MEDIUM   | 40    | Remediation planned (Phases 3-7, 11-15, 21-27, 36-47, 56-65) |
+| LOW      | 21    | Accepted risk / deferred                                     |
 
 Additionally, **65+ positive security findings** confirmed mature practices across SSRF guards, path traversal protection, timing-safe comparisons, body size limits, ReDoS protection, sandbox validation, prototype pollution guards, token redaction, command authorization, and more.
 
@@ -28,145 +28,145 @@ All 30+ known OpenClaw product CVEs (through CVE-2026-28363, fix version 2026.2.
 
 ### Rounds 1-5: Core Channel PII, Gateway, Routing
 
-| ID | Severity | Category | Summary | Phase |
-|----|----------|----------|---------|-------|
-| SEC-HIGH-1 | HIGH | PII Leakage | WhatsApp phone numbers in deliver-reply.ts logs | 1 |
-| SEC-HIGH-2 | HIGH | PII Leakage | WhatsApp phone numbers in process-message.ts + on-message.ts logs | 1 |
-| SEC-HIGH-3 | HIGH | PII Leakage | WhatsApp phone numbers in access-control.ts logs | 1 |
-| SEC-HIGH-4 | HIGH | Info Disclosure | Gateway logs.tail serves unredacted log content | 2 |
-| SEC-MED-1 | MEDIUM | PII Leakage | LINE user IDs in log statements (all instances) | 3 |
-| SEC-MED-2 | MEDIUM | PII Leakage | LINE sender identity in message context logs | 3 |
-| SEC-MED-3 | MEDIUM | PII Leakage | Discord user ID sent to LLM in direct label | 4 |
-| SEC-MED-4 | MEDIUM | PII Leakage | Discord user IDs in reaction summaries + verbose logs | 4 |
-| SEC-MED-5 | MEDIUM | Info Disclosure | Full filesystem paths in gateway snapshot | 5 |
-| SEC-MED-6 | MEDIUM | Info Disclosure | Hostname/IP in SystemPresence (default-on) | 5 |
-| SEC-MED-7 | MEDIUM | Path Traversal | Session export path not validated against workspace | 6 |
-| SEC-MED-8 | MEDIUM | Info Disclosure | chat.history returns full message content | 7 (accepted) |
-| SEC-MED-9 | MEDIUM | PII Leakage | Raw peer IDs in routing debug logs | 7 |
-| SEC-R5-CRIT-1 | CRITICAL | Auth Bypass | `isSecureWebSocketUrl` allows `ws://` to any hostname | 8 |
-| SEC-R5-HIGH-1 | HIGH | Session Isolation | `x-openclaw-session-key` header unsanitized | 9 |
-| SEC-R5-HIGH-2 | HIGH | Code Execution | Browser tool console action + eval in interactions | 10 |
-| SEC-R5-MED-1 | MEDIUM | Secret Exposure | API key passed to onRetry callback | 11 |
-| SEC-R5-MED-2 | MEDIUM | Token Weakness | Canvas capability token 144-bit entropy | 12 |
-| SEC-R5-MED-3 | MEDIUM | Input Validation | Subagent session key depth unlimited | 13 |
-| SEC-R5-MED-4 | MEDIUM | Auth Config | `mode: none` allows unauthenticated gateway access | 14 |
-| SEC-R5-MED-5 | MEDIUM | Log Injection | WS handshake failure logs unsanitized headers (5 locations) | 15 |
+| ID            | Severity | Category          | Summary                                                           | Phase        |
+| ------------- | -------- | ----------------- | ----------------------------------------------------------------- | ------------ |
+| SEC-HIGH-1    | HIGH     | PII Leakage       | WhatsApp phone numbers in deliver-reply.ts logs                   | 1            |
+| SEC-HIGH-2    | HIGH     | PII Leakage       | WhatsApp phone numbers in process-message.ts + on-message.ts logs | 1            |
+| SEC-HIGH-3    | HIGH     | PII Leakage       | WhatsApp phone numbers in access-control.ts logs                  | 1            |
+| SEC-HIGH-4    | HIGH     | Info Disclosure   | Gateway logs.tail serves unredacted log content                   | 2            |
+| SEC-MED-1     | MEDIUM   | PII Leakage       | LINE user IDs in log statements (all instances)                   | 3            |
+| SEC-MED-2     | MEDIUM   | PII Leakage       | LINE sender identity in message context logs                      | 3            |
+| SEC-MED-3     | MEDIUM   | PII Leakage       | Discord user ID sent to LLM in direct label                       | 4            |
+| SEC-MED-4     | MEDIUM   | PII Leakage       | Discord user IDs in reaction summaries + verbose logs             | 4            |
+| SEC-MED-5     | MEDIUM   | Info Disclosure   | Full filesystem paths in gateway snapshot                         | 5            |
+| SEC-MED-6     | MEDIUM   | Info Disclosure   | Hostname/IP in SystemPresence (default-on)                        | 5            |
+| SEC-MED-7     | MEDIUM   | Path Traversal    | Session export path not validated against workspace               | 6            |
+| SEC-MED-8     | MEDIUM   | Info Disclosure   | chat.history returns full message content                         | 7 (accepted) |
+| SEC-MED-9     | MEDIUM   | PII Leakage       | Raw peer IDs in routing debug logs                                | 7            |
+| SEC-R5-CRIT-1 | CRITICAL | Auth Bypass       | `isSecureWebSocketUrl` allows `ws://` to any hostname             | 8            |
+| SEC-R5-HIGH-1 | HIGH     | Session Isolation | `x-openclaw-session-key` header unsanitized                       | 9            |
+| SEC-R5-HIGH-2 | HIGH     | Code Execution    | Browser tool console action + eval in interactions                | 10           |
+| SEC-R5-MED-1  | MEDIUM   | Secret Exposure   | API key passed to onRetry callback                                | 11           |
+| SEC-R5-MED-2  | MEDIUM   | Token Weakness    | Canvas capability token 144-bit entropy                           | 12           |
+| SEC-R5-MED-3  | MEDIUM   | Input Validation  | Subagent session key depth unlimited                              | 13           |
+| SEC-R5-MED-4  | MEDIUM   | Auth Config       | `mode: none` allows unauthenticated gateway access                | 14           |
+| SEC-R5-MED-5  | MEDIUM   | Log Injection     | WS handshake failure logs unsanitized headers (5 locations)       | 15           |
 
 ### Round 6: SSRF, Plugins, Media, Config
 
-| ID | Severity | Category | Summary | Phase |
-|----|----------|----------|---------|-------|
-| SEC-R6-HIGH-1 | HIGH | Auth Bypass | Plugin HTTP routes bypass gateway auth with `auth: "none"` | 16 |
-| SEC-R6-HIGH-2 | HIGH | SSRF | TTS fetch calls bypass SSRF guard | 17 |
-| SEC-R6-HIGH-3 | HIGH | SSRF | PDF native provider fetch calls bypass SSRF guard | 17 |
-| SEC-R6-HIGH-4 | HIGH | SSRF | `withTrustedWebToolsEndpoint` has `dangerouslyAllowPrivateNetwork: true` | 17 |
-| SEC-R6-MED-1 | MEDIUM | Input Validation | Session topic ID no length validation | 21 |
-| SEC-R6-MED-2 | MEDIUM | DoS | Media `downloadToFile` no Content-Length pre-check | 22 |
-| SEC-R6-MED-3 | MEDIUM | TOCTOU | Copilot token cache file permissions race | 23 |
-| SEC-R6-MED-4 | MEDIUM | Input Validation | AJV `strict: false` in plugin schema validator | 24 |
-| SEC-R6-MED-5 | MEDIUM | Input Validation | Discord user ID in `new RegExp()` without escaping | 25 |
-| SEC-R6-MED-6 | MEDIUM | Command Injection | `shell: true` fallback in qmd-manager Windows spawn | 26 |
-| SEC-R6-MED-7 | MEDIUM | Command Injection | Bash command from chat — command text unsanitized flow | 27 |
+| ID            | Severity | Category          | Summary                                                                  | Phase |
+| ------------- | -------- | ----------------- | ------------------------------------------------------------------------ | ----- |
+| SEC-R6-HIGH-1 | HIGH     | Auth Bypass       | Plugin HTTP routes bypass gateway auth with `auth: "none"`               | 16    |
+| SEC-R6-HIGH-2 | HIGH     | SSRF              | TTS fetch calls bypass SSRF guard                                        | 17    |
+| SEC-R6-HIGH-3 | HIGH     | SSRF              | PDF native provider fetch calls bypass SSRF guard                        | 17    |
+| SEC-R6-HIGH-4 | HIGH     | SSRF              | `withTrustedWebToolsEndpoint` has `dangerouslyAllowPrivateNetwork: true` | 17    |
+| SEC-R6-MED-1  | MEDIUM   | Input Validation  | Session topic ID no length validation                                    | 21    |
+| SEC-R6-MED-2  | MEDIUM   | DoS               | Media `downloadToFile` no Content-Length pre-check                       | 22    |
+| SEC-R6-MED-3  | MEDIUM   | TOCTOU            | Copilot token cache file permissions race                                | 23    |
+| SEC-R6-MED-4  | MEDIUM   | Input Validation  | AJV `strict: false` in plugin schema validator                           | 24    |
+| SEC-R6-MED-5  | MEDIUM   | Input Validation  | Discord user ID in `new RegExp()` without escaping                       | 25    |
+| SEC-R6-MED-6  | MEDIUM   | Command Injection | `shell: true` fallback in qmd-manager Windows spawn                      | 26    |
+| SEC-R6-MED-7  | MEDIUM   | Command Injection | Bash command from chat — command text unsanitized flow                   | 27    |
 
 ### Round 7: Remaining Channels, Extensions, Crypto, UI
 
-| ID | Severity | Category | Summary | Phase |
-|----|----------|----------|---------|-------|
-| SEC-R7-HIGH-1 | HIGH | PII Leakage | Telegram chat/sender IDs + names in logs | 28 |
-| SEC-R7-HIGH-2 | HIGH | PII Leakage | Signal phone numbers/UUIDs in logs | 29 |
-| SEC-R7-HIGH-3 | HIGH | PII Leakage | iMessage phone/email handles in logs | 30 |
-| SEC-R7-HIGH-4 | HIGH | Client Security | Device private key stored in localStorage unencrypted | 31 |
-| SEC-R7-HIGH-5 | HIGH | Client Security | Gateway auth token in localStorage plaintext | 31 |
-| SEC-R7-HIGH-6 | HIGH | CSRF | `dangerouslyAllowHostHeaderOriginFallback` enables WS hijacking | 32 |
-| SEC-R7-HIGH-7 | HIGH | Timing Attack | Hooks/gateway token comparison uses `!==` not `safeEqualSecret` | 33 |
-| SEC-R7-HIGH-8 | HIGH | Command Injection | Tlon extension: LLM-controlled command args unvalidated | 34 |
-| SEC-R7-HIGH-9 | HIGH | PII Leakage | Voice-call extension: speech transcripts in logs | 35 |
-| SEC-R7-HIGH-10 | HIGH | MIME Confusion | Tlon extension: MIME from header not content bytes | 35 |
-| SEC-R7-MED-1 | MEDIUM | PII Leakage | Telegram dm-access structured logger exposes full PII | 36 |
-| SEC-R7-MED-2 | MEDIUM | Integrity | Session fork writes raw JSONL bypassing SessionManager | 37 |
-| SEC-R7-MED-3 | MEDIUM | Command Injection | Docker sandbox `shell: true` on Windows | 38 |
-| SEC-R7-MED-4 | MEDIUM | Info Disclosure | iMessage RPC raw line in error log | 39 |
-| SEC-R7-MED-5 | MEDIUM | Input Validation | Gateway system-event accepts unsanitized host/IP | 40 |
-| SEC-R7-MED-6 | MEDIUM | TLS Bypass | Synology Chat TLS verification disabled by default | 41 |
-| SEC-R7-MED-7 | MEDIUM | PII Leakage | Synology Chat user IDs + message previews in logs | 42 |
-| SEC-R7-MED-8 | MEDIUM | CSS Injection | Diffs extension `unsafeCSS` field | 43 |
-| SEC-R7-MED-9 | MEDIUM | SSRF | Mattermost/Matrix/Nextcloud SSRF on configurable base URLs | 44 |
-| SEC-R7-MED-10 | MEDIUM | SSRF | Thread-ownership SSRF via configurable forwarderUrl | 44 |
-| SEC-R7-MED-11 | MEDIUM | Credential Storage | Zalouser credentials stored without restrictive permissions | 45 |
-| SEC-R7-MED-12 | MEDIUM | Auth Scope | OpenAI-compat endpoints hardcode `senderIsOwner: true` | 46 |
-| SEC-R7-MED-13 | MEDIUM | CSP | CSP allows `ws:` and `https:` wildcard in img-src | 46 |
-| SEC-R7-MED-14 | MEDIUM | Content Safety | `allowUnsafeExternalContent` bypasses sanitization | 46 |
-| SEC-R7-MED-15 | MEDIUM | TOCTOU | Device identity directory created without explicit mode | 47 |
-| SEC-R7-MED-16 | MEDIUM | Timing Attack | Extension relay auth uses `===` not `safeEqualSecret` | 47 |
+| ID             | Severity | Category           | Summary                                                         | Phase |
+| -------------- | -------- | ------------------ | --------------------------------------------------------------- | ----- |
+| SEC-R7-HIGH-1  | HIGH     | PII Leakage        | Telegram chat/sender IDs + names in logs                        | 28    |
+| SEC-R7-HIGH-2  | HIGH     | PII Leakage        | Signal phone numbers/UUIDs in logs                              | 29    |
+| SEC-R7-HIGH-3  | HIGH     | PII Leakage        | iMessage phone/email handles in logs                            | 30    |
+| SEC-R7-HIGH-4  | HIGH     | Client Security    | Device private key stored in localStorage unencrypted           | 31    |
+| SEC-R7-HIGH-5  | HIGH     | Client Security    | Gateway auth token in localStorage plaintext                    | 31    |
+| SEC-R7-HIGH-6  | HIGH     | CSRF               | `dangerouslyAllowHostHeaderOriginFallback` enables WS hijacking | 32    |
+| SEC-R7-HIGH-7  | HIGH     | Timing Attack      | Hooks/gateway token comparison uses `!==` not `safeEqualSecret` | 33    |
+| SEC-R7-HIGH-8  | HIGH     | Command Injection  | Tlon extension: LLM-controlled command args unvalidated         | 34    |
+| SEC-R7-HIGH-9  | HIGH     | PII Leakage        | Voice-call extension: speech transcripts in logs                | 35    |
+| SEC-R7-HIGH-10 | HIGH     | MIME Confusion     | Tlon extension: MIME from header not content bytes              | 35    |
+| SEC-R7-MED-1   | MEDIUM   | PII Leakage        | Telegram dm-access structured logger exposes full PII           | 36    |
+| SEC-R7-MED-2   | MEDIUM   | Integrity          | Session fork writes raw JSONL bypassing SessionManager          | 37    |
+| SEC-R7-MED-3   | MEDIUM   | Command Injection  | Docker sandbox `shell: true` on Windows                         | 38    |
+| SEC-R7-MED-4   | MEDIUM   | Info Disclosure    | iMessage RPC raw line in error log                              | 39    |
+| SEC-R7-MED-5   | MEDIUM   | Input Validation   | Gateway system-event accepts unsanitized host/IP                | 40    |
+| SEC-R7-MED-6   | MEDIUM   | TLS Bypass         | Synology Chat TLS verification disabled by default              | 41    |
+| SEC-R7-MED-7   | MEDIUM   | PII Leakage        | Synology Chat user IDs + message previews in logs               | 42    |
+| SEC-R7-MED-8   | MEDIUM   | CSS Injection      | Diffs extension `unsafeCSS` field                               | 43    |
+| SEC-R7-MED-9   | MEDIUM   | SSRF               | Mattermost/Matrix/Nextcloud SSRF on configurable base URLs      | 44    |
+| SEC-R7-MED-10  | MEDIUM   | SSRF               | Thread-ownership SSRF via configurable forwarderUrl             | 44    |
+| SEC-R7-MED-11  | MEDIUM   | Credential Storage | Zalouser credentials stored without restrictive permissions     | 45    |
+| SEC-R7-MED-12  | MEDIUM   | Auth Scope         | OpenAI-compat endpoints hardcode `senderIsOwner: true`          | 46    |
+| SEC-R7-MED-13  | MEDIUM   | CSP                | CSP allows `ws:` and `https:` wildcard in img-src               | 46    |
+| SEC-R7-MED-14  | MEDIUM   | Content Safety     | `allowUnsafeExternalContent` bypasses sanitization              | 46    |
+| SEC-R7-MED-15  | MEDIUM   | TOCTOU             | Device identity directory created without explicit mode         | 47    |
+| SEC-R7-MED-16  | MEDIUM   | Timing Attack      | Extension relay auth uses `===` not `safeEqualSecret`           | 47    |
 
 ### Round 8: CLI, Auto-Reply, Providers, Canvas, Skills, Cross-Cutting
 
-| ID | Severity | Category | Summary | Phase |
-|----|----------|----------|---------|-------|
-| SEC-R8-HIGH-1 | HIGH | Command Injection | SCP remote path injection via shell metacharacters in media paths | 48 |
-| SEC-R8-HIGH-2 | HIGH | Path Traversal | `/export-session` writes HTML to arbitrary filesystem paths | 49 |
-| SEC-R8-HIGH-3 | HIGH | SSRF | Provider URL SSRF via configurable Ollama/vLLM `baseUrl` | 50 |
-| SEC-R8-HIGH-4 | HIGH | Auth Bypass | Copilot token `proxy-ep` URL derivation without hostname validation | 51 |
-| SEC-R8-HIGH-5 | HIGH | XSS | Canvas host serves user HTML without CSP headers + unauthenticated WS | 52 |
-| SEC-R8-HIGH-6 | HIGH | ReDoS | Mention pattern regex from config uses raw `new RegExp` without `compileSafeRegex` | 53 |
-| SEC-R8-MED-1 | MEDIUM | Info Disclosure | Session file path disclosed in error messages to chat channel | 56 |
-| SEC-R8-MED-2 | MEDIUM | Auth Bypass | `/config show` exposes full raw configuration to chat channel | 57 |
-| SEC-R8-MED-3 | MEDIUM | Input Validation | `/debug set` runtime config overrides bypass schema validation | 58 |
-| SEC-R8-MED-4 | MEDIUM | PII Leakage | Allowlist entries (phone numbers) in CLI status output | 59 |
-| SEC-R8-MED-5 | MEDIUM | Info Disclosure | Qwen OAuth error response body in error message | 60 |
-| SEC-R8-MED-6 | MEDIUM | Credential Storage | Copilot token cached as plaintext JSON on disk | 60 |
-| SEC-R8-MED-7 | MEDIUM | Concurrency | Skill env overrides mutate global `process.env` (cross-session leakage) | 61 |
-| SEC-R8-MED-8 | MEDIUM | Supply Chain | Skills loaded from untrusted workspace directories without verification | 62 |
-| SEC-R8-MED-9 | MEDIUM | Info Disclosure | Stack traces in session-memory handler logs | 63 |
-| SEC-R8-MED-10 | MEDIUM | Secret Exposure | `formatErrorWithStack` missing `redactSensitiveText` | 63 |
-| SEC-R8-MED-11 | MEDIUM | Input Validation | YAML frontmatter parsing missing proto-pollution filter | 64 |
-| SEC-R8-MED-12 | MEDIUM | Robustness | Unguarded `JSON.parse` on external data in 3+ production paths | 65 |
-| SEC-R8-MED-13 | MEDIUM | Info Disclosure | Browser server returns raw `err.message` in HTTP responses | 65 |
-| SEC-R8-MED-14 | MEDIUM | Race Condition | Session store read on non-atomic-rename filesystems | 65 |
+| ID            | Severity | Category           | Summary                                                                            | Phase |
+| ------------- | -------- | ------------------ | ---------------------------------------------------------------------------------- | ----- |
+| SEC-R8-HIGH-1 | HIGH     | Command Injection  | SCP remote path injection via shell metacharacters in media paths                  | 48    |
+| SEC-R8-HIGH-2 | HIGH     | Path Traversal     | `/export-session` writes HTML to arbitrary filesystem paths                        | 49    |
+| SEC-R8-HIGH-3 | HIGH     | SSRF               | Provider URL SSRF via configurable Ollama/vLLM `baseUrl`                           | 50    |
+| SEC-R8-HIGH-4 | HIGH     | Auth Bypass        | Copilot token `proxy-ep` URL derivation without hostname validation                | 51    |
+| SEC-R8-HIGH-5 | HIGH     | XSS                | Canvas host serves user HTML without CSP headers + unauthenticated WS              | 52    |
+| SEC-R8-HIGH-6 | HIGH     | ReDoS              | Mention pattern regex from config uses raw `new RegExp` without `compileSafeRegex` | 53    |
+| SEC-R8-MED-1  | MEDIUM   | Info Disclosure    | Session file path disclosed in error messages to chat channel                      | 56    |
+| SEC-R8-MED-2  | MEDIUM   | Auth Bypass        | `/config show` exposes full raw configuration to chat channel                      | 57    |
+| SEC-R8-MED-3  | MEDIUM   | Input Validation   | `/debug set` runtime config overrides bypass schema validation                     | 58    |
+| SEC-R8-MED-4  | MEDIUM   | PII Leakage        | Allowlist entries (phone numbers) in CLI status output                             | 59    |
+| SEC-R8-MED-5  | MEDIUM   | Info Disclosure    | Qwen OAuth error response body in error message                                    | 60    |
+| SEC-R8-MED-6  | MEDIUM   | Credential Storage | Copilot token cached as plaintext JSON on disk                                     | 60    |
+| SEC-R8-MED-7  | MEDIUM   | Concurrency        | Skill env overrides mutate global `process.env` (cross-session leakage)            | 61    |
+| SEC-R8-MED-8  | MEDIUM   | Supply Chain       | Skills loaded from untrusted workspace directories without verification            | 62    |
+| SEC-R8-MED-9  | MEDIUM   | Info Disclosure    | Stack traces in session-memory handler logs                                        | 63    |
+| SEC-R8-MED-10 | MEDIUM   | Secret Exposure    | `formatErrorWithStack` missing `redactSensitiveText`                               | 63    |
+| SEC-R8-MED-11 | MEDIUM   | Input Validation   | YAML frontmatter parsing missing proto-pollution filter                            | 64    |
+| SEC-R8-MED-12 | MEDIUM   | Robustness         | Unguarded `JSON.parse` on external data in 3+ production paths                     | 65    |
+| SEC-R8-MED-13 | MEDIUM   | Info Disclosure    | Browser server returns raw `err.message` in HTTP responses                         | 65    |
+| SEC-R8-MED-14 | MEDIUM   | Race Condition     | Session store read on non-atomic-rename filesystems                                | 65    |
 
 ### Dependency Findings
 
-| ID | Severity | Category | Summary | Phase |
-|----|----------|----------|---------|-------|
-| SEC-DEP-HIGH-1 | HIGH | Supply Chain | pnpm 10.23.0 — CVE-2025-69264 + CVE-2025-69262 + CVE-2025-69263 | 18 |
-| SEC-DEP-HIGH-2 | HIGH | Runtime | Node.js < 22.22.0 multiple CVEs | 19 |
-| SEC-DEP-MED-1 | MEDIUM | Dev Tooling | Vite dev server multiple CVEs (actively exploited) | 20 |
-| SEC-DEP-MED-2 | MEDIUM | Transitive | protobufjs transitive — verify >= 7.2.5 (CVE-2023-36665) | — (verify) |
-| SEC-DEP-MED-3 | MEDIUM | Supply Chain | Verify chalk/strip-ansi not at compromised versions | — (verify) |
-| SEC-DEP-MED-4 | MEDIUM | Transitive | @discordjs/opus — verify patched (CVE-2024-21521) | — (verify) |
-| SEC-DEP-MED-5 | MEDIUM | Transitive | sqlite-vec may bundle SQLite < 3.50.2 (CVE-2025-6965) | — (verify) |
+| ID             | Severity | Category     | Summary                                                         | Phase      |
+| -------------- | -------- | ------------ | --------------------------------------------------------------- | ---------- |
+| SEC-DEP-HIGH-1 | HIGH     | Supply Chain | pnpm 10.23.0 — CVE-2025-69264 + CVE-2025-69262 + CVE-2025-69263 | 18         |
+| SEC-DEP-HIGH-2 | HIGH     | Runtime      | Node.js < 22.22.0 multiple CVEs                                 | 19         |
+| SEC-DEP-MED-1  | MEDIUM   | Dev Tooling  | Vite dev server multiple CVEs (actively exploited)              | 20         |
+| SEC-DEP-MED-2  | MEDIUM   | Transitive   | protobufjs transitive — verify >= 7.2.5 (CVE-2023-36665)        | — (verify) |
+| SEC-DEP-MED-3  | MEDIUM   | Supply Chain | Verify chalk/strip-ansi not at compromised versions             | — (verify) |
+| SEC-DEP-MED-4  | MEDIUM   | Transitive   | @discordjs/opus — verify patched (CVE-2024-21521)               | — (verify) |
+| SEC-DEP-MED-5  | MEDIUM   | Transitive   | sqlite-vec may bundle SQLite < 3.50.2 (CVE-2025-6965)           | — (verify) |
 
 ### LOW / Accepted Risk
 
-| ID | Severity | Summary |
-|----|----------|---------|
-| SEC-R5-LOW-1 | LOW | Plugin packages not integrity-checked |
-| SEC-R5-LOW-2 | LOW | Rate limiter loopback exemption |
-| SEC-R5-LOW-3 | LOW | Firecrawl API key via env var |
-| SEC-R5-LOW-4 | LOW | Telegram healthz endpoint unauthenticated |
-| SEC-R6-LOW-1 | LOW | Temp media file cleanup best-effort |
-| SEC-R6-LOW-2 | LOW | Plugin auto-load when allowlist empty |
-| SEC-R6-LOW-3 | LOW | Plugin path safety checks skipped on Windows |
-| SEC-R6-LOW-4 | LOW | Error body snippets in MediaFetchError |
-| SEC-R6-LOW-5 | LOW | `Math.random()` for session slug (non-security) |
-| SEC-R6-LOW-6 | LOW | Media server no explicit auth (UUID+TTL mitigates) |
-| SEC-R7-LOW-1 | LOW | Voice-call metadata logged extensively |
-| SEC-R7-LOW-2 | LOW | Extension pairing approval messages log user IDs |
-| SEC-R7-LOW-3 | LOW | Hardcoded OAuth client IDs in MiniMax/Qwen extensions |
-| SEC-R7-LOW-4 | LOW | Gemini CLI auth reads from third-party install |
-| SEC-R7-LOW-5 | LOW | No rate limit on OpenAI-compat HTTP endpoints |
-| SEC-R7-LOW-6 | LOW | Auth profile credentials plaintext JSON (0o600 mitigates) |
-| SEC-R7-LOW-7 | LOW | No memory zeroing for secrets (JS platform limitation) |
-| SEC-R8-LOW-1 | LOW | Canvas host `innerHTML` in default page (non-user input) |
-| SEC-R8-LOW-2 | LOW | Slack HTTP duplicate webhook path silently ignored |
-| SEC-R8-LOW-3 | LOW | Session memory handler logs `~`-prefixed file paths |
-| SEC-R8-LOW-4 | LOW | GitHub/Qwen OAuth client IDs hardcoded (public by design) |
+| ID           | Severity | Summary                                                   |
+| ------------ | -------- | --------------------------------------------------------- |
+| SEC-R5-LOW-1 | LOW      | Plugin packages not integrity-checked                     |
+| SEC-R5-LOW-2 | LOW      | Rate limiter loopback exemption                           |
+| SEC-R5-LOW-3 | LOW      | Firecrawl API key via env var                             |
+| SEC-R5-LOW-4 | LOW      | Telegram healthz endpoint unauthenticated                 |
+| SEC-R6-LOW-1 | LOW      | Temp media file cleanup best-effort                       |
+| SEC-R6-LOW-2 | LOW      | Plugin auto-load when allowlist empty                     |
+| SEC-R6-LOW-3 | LOW      | Plugin path safety checks skipped on Windows              |
+| SEC-R6-LOW-4 | LOW      | Error body snippets in MediaFetchError                    |
+| SEC-R6-LOW-5 | LOW      | `Math.random()` for session slug (non-security)           |
+| SEC-R6-LOW-6 | LOW      | Media server no explicit auth (UUID+TTL mitigates)        |
+| SEC-R7-LOW-1 | LOW      | Voice-call metadata logged extensively                    |
+| SEC-R7-LOW-2 | LOW      | Extension pairing approval messages log user IDs          |
+| SEC-R7-LOW-3 | LOW      | Hardcoded OAuth client IDs in MiniMax/Qwen extensions     |
+| SEC-R7-LOW-4 | LOW      | Gemini CLI auth reads from third-party install            |
+| SEC-R7-LOW-5 | LOW      | No rate limit on OpenAI-compat HTTP endpoints             |
+| SEC-R7-LOW-6 | LOW      | Auth profile credentials plaintext JSON (0o600 mitigates) |
+| SEC-R7-LOW-7 | LOW      | No memory zeroing for secrets (JS platform limitation)    |
+| SEC-R8-LOW-1 | LOW      | Canvas host `innerHTML` in default page (non-user input)  |
+| SEC-R8-LOW-2 | LOW      | Slack HTTP duplicate webhook path silently ignored        |
+| SEC-R8-LOW-3 | LOW      | Session memory handler logs `~`-prefixed file paths       |
+| SEC-R8-LOW-4 | LOW      | GitHub/Qwen OAuth client IDs hardcoded (public by design) |
 
 ---
 
 ## Detailed Findings — Rounds 1-7
 
-*All findings from Rounds 1-7 remain unchanged. See previous sections for full details.*
+_All findings from Rounds 1-7 remain unchanged. See previous sections for full details._
 
 ---
 
@@ -194,7 +194,11 @@ The `/export-session` command accepts a user-provided output path via chat, uses
 
 ```typescript
 const outputPath = args.outputPath
-  ? path.resolve(args.outputPath.startsWith("~") ? args.outputPath.replace("~", process.env.HOME ?? "") : args.outputPath)
+  ? path.resolve(
+      args.outputPath.startsWith("~")
+        ? args.outputPath.replace("~", process.env.HOME ?? "")
+        : args.outputPath,
+    )
   : path.join(params.workspaceDir, defaultFileName);
 fs.mkdirSync(outputDir, { recursive: true });
 fs.writeFileSync(outputPath, html, "utf-8");
@@ -205,6 +209,7 @@ fs.writeFileSync(outputPath, html, "utf-8");
 ### SEC-R8-HIGH-3: Provider URL SSRF
 
 **Files**:
+
 - `src/agents/models-config.providers.ts:246` — `queryOllamaContextWindow` fetches `${apiBase}/api/show`
 - `src/agents/models-config.providers.ts:283` — `discoverOllamaModels` fetches `${apiBase}/api/tags`
 - `src/agents/models-config.providers.ts:348` — `discoverVllmModels` fetches user-provided URL
@@ -278,22 +283,22 @@ The canvas host serves arbitrary HTML from `~/.openclaw/canvas/` with no Content
 
 ### Verified Correct Overrides (No Action Needed)
 
-| Package | Pinned Version | CVEs Addressed |
-|---------|---------------|----------------|
-| fast-xml-parser | 5.3.8 | CVE-2026-25896, CVE-2026-25128, CVE-2026-26278, CVE-2026-27942 |
-| form-data | 2.5.4 | CVE-2025-7783 |
-| hono | 4.12.5 | CVE-2025-62610, CVE-2025-58362, CVE-2026-24771, +3 more |
-| tar | 7.5.10 | CVE-2026-23745, CVE-2026-24842 |
-| tough-cookie | 4.1.3 | CVE-2023-26136 |
-| qs | 6.14.2 | CVE-2022-24999 |
-| playwright-core | 1.58.2 | CVE-2025-59288 |
-| sqlite-vec | 0.1.7-alpha.2 | CVE-2024-46488 |
-| undici | ^7.22.0 | CVE-2025-22150 |
-| AJV | ^8.18.0 | CVE-2025-69873 |
-| pdfjs-dist | ^5.5.207 | CVE-2024-4367 |
-| vitest | ^4.0.18 | CVE-2025-24964, CVE-2025-24963 |
-| minimatch | 10.2.4 | CVE-2026-26996, CVE-2026-27903, CVE-2026-27904 |
-| @hono/node-server | 1.19.10 | CVE-2026-29087 |
+| Package           | Pinned Version | CVEs Addressed                                                 |
+| ----------------- | -------------- | -------------------------------------------------------------- |
+| fast-xml-parser   | 5.3.8          | CVE-2026-25896, CVE-2026-25128, CVE-2026-26278, CVE-2026-27942 |
+| form-data         | 2.5.4          | CVE-2025-7783                                                  |
+| hono              | 4.12.5         | CVE-2025-62610, CVE-2025-58362, CVE-2026-24771, +3 more        |
+| tar               | 7.5.10         | CVE-2026-23745, CVE-2026-24842                                 |
+| tough-cookie      | 4.1.3          | CVE-2023-26136                                                 |
+| qs                | 6.14.2         | CVE-2022-24999                                                 |
+| playwright-core   | 1.58.2         | CVE-2025-59288                                                 |
+| sqlite-vec        | 0.1.7-alpha.2  | CVE-2024-46488                                                 |
+| undici            | ^7.22.0        | CVE-2025-22150                                                 |
+| AJV               | ^8.18.0        | CVE-2025-69873                                                 |
+| pdfjs-dist        | ^5.5.207       | CVE-2024-4367                                                  |
+| vitest            | ^4.0.18        | CVE-2025-24964, CVE-2025-24963                                 |
+| minimatch         | 10.2.4         | CVE-2026-26996, CVE-2026-27903, CVE-2026-27904                 |
+| @hono/node-server | 1.19.10        | CVE-2026-29087                                                 |
 
 ### No Known CVEs (Round 8 verified)
 
@@ -304,17 +309,18 @@ Grammy ^1.41.0, @buape/carbon (pinned), @slack/bolt ^4.6.0, @slack/web-api ^7.14
 30+ CVEs disclosed through March 2026 (CVE-2026-25253, CVE-2026-24763, ClawJacked, CVE-2026-28363 CVSS 9.9, and more) are all fixed through version 2026.2.23, included in current 2026.3.3. No action needed.
 
 Notable recent disclosures (post-ClawJacked, March 2026 batch):
+
 - CVE-2026-28363 (CVSS 9.9): `tools.exec.safeBins` sort bypass via GNU long-option abbreviations
 - CVE-2026-28474 (CVSS 9.3): Nextcloud Talk allowlist bypass via actor.name spoofing
 - CVE-2026-28446 (CVSS 9.2): Voice-call extension inbound allowlist bypass
 
 ### Supply Chain Alerts (Feb-March 2026)
 
-| Alert | Impact on OpenClaw |
-|-------|-------------------|
+| Alert                                                                                | Impact on OpenClaw                                                           |
+| ------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------- |
 | SANDWORM_MODE (Feb 24) — 19 typosquatting npm packages including OpenClaw lookalikes | Verify lockfile integrity; `pnpm.minimumReleaseAge` provides some protection |
-| Cline CLI compromise (Feb 17) — installs OpenClaw covertly | Not a vulnerability in OpenClaw itself |
-| Malicious Baileys forks (lotusbail, @dappaoffc/baileys-mod) | Verify using legitimate `@whiskeysockets/baileys` in lockfile |
+| Cline CLI compromise (Feb 17) — installs OpenClaw covertly                           | Not a vulnerability in OpenClaw itself                                       |
+| Malicious Baileys forks (lotusbail, @dappaoffc/baileys-mod)                          | Verify using legitimate `@whiskeysockets/baileys` in lockfile                |
 
 ---
 
@@ -322,11 +328,11 @@ Notable recent disclosures (post-ClawJacked, March 2026 batch):
 
 The codebase demonstrates mature security practices confirmed across 8 audit rounds (65+ positive findings):
 
-1. **SSRF protection** — `fetchWithSsrFGuard` with DNS pinning, private IP blocking, redirect credential stripping *(inconsistently applied — see provider URLs)*
+1. **SSRF protection** — `fetchWithSsrFGuard` with DNS pinning, private IP blocking, redirect credential stripping _(inconsistently applied — see provider URLs)_
 2. **Path traversal** — `readFileWithinRoot`, `openBoundaryFileSync`, `readLocalFileSafely` with `O_NOFOLLOW`, inode verification, canvas `resolveFileWithinRoot`
-3. **Timing-safe comparisons** — `safeEqualSecret` via `timingSafeEqual` on all critical auth paths *(2 non-critical paths missed)*
+3. **Timing-safe comparisons** — `safeEqualSecret` via `timingSafeEqual` on all critical auth paths _(2 non-critical paths missed)_
 4. **HTTP body limits** — `readRequestBodyWithLimit` with configurable `maxBytes`, timeouts; Slack HTTP 1MB guard
-5. **ReDoS protection** — `compileSafeRegex` with nested repetition detection, 2048-char input bound *(mention patterns missed)*
+5. **ReDoS protection** — `compileSafeRegex` with nested repetition detection, 2048-char input bound _(mention patterns missed)_
 6. **Session security** — atomic writes, file locking, strict ID validation (`SAFE_SESSION_ID_RE`), in-process lock queues
 7. **Command injection prevention** — `shouldSpawnWithShell` returns `false`, `execFile` preferred
 8. **Plugin security** — ownership checks, boundary file opening, symlink escape prevention, realpath validation
@@ -341,7 +347,7 @@ The codebase demonstrates mature security practices confirmed across 8 audit rou
 17. **No hardcoded secrets** — only test fixtures with obvious synthetic values
 18. **Gateway startup** — refuses to bind to network without auth configured
 19. **Prototype pollution guards** — `isBlockedObjectKey` used consistently in config merge, runtime overrides, webhook mapping, account normalization
-20. **Token redaction** — comprehensive `redactSensitiveText` covering sk-*, ghp_*, xox-*, AIza*, PEM blocks, auth headers
+20. **Token redaction** — comprehensive `redactSensitiveText` covering sk-\_, ghp\__, xox-_, AIza\_, PEM blocks, auth headers
 21. **Command authorization** — consistent `isAuthorizedSender` checks on all auto-reply commands; directive injection gated for unauthorized senders
 22. **Env substitution safety** — env var names restricted to `^[A-Z_][A-Z0-9_]*$`
 23. **Config include safety** — path traversal protection, symlink resolution, circular include detection, depth cap 10, size cap 2MB
@@ -356,7 +362,7 @@ The codebase demonstrates mature security practices confirmed across 8 audit rou
 
 ### Phases 1-47: Unchanged from Round 7 report
 
-*With these amendments from Round 8:*
+_With these amendments from Round 8:_
 
 - **Phase 6 (SEC-MED-7)**: Export session path traversal now has a more severe instance (SEC-R8-HIGH-2) — elevated to HIGH, merged into Phase 49
 - **Phase 17**: Provider SSRF now includes Ollama/vLLM discovery endpoints (SEC-R8-HIGH-3) — 6 source files total
@@ -483,36 +489,36 @@ The codebase demonstrates mature security practices confirmed across 8 audit rou
 
 ## Implementation Priority
 
-| Priority | Phases | Severity | Category |
-|----------|--------|----------|----------|
-| P0 | 8 | CRITICAL | WebSocket MitM |
-| P1 | 17+50, 16, 33 | HIGH | SSRF consistency, plugin auth, timing attacks |
-| P1 | 1, 28, 29, 30 | HIGH | PII in all core channels |
-| P1 | 9, 31, 48, 49 | HIGH | Session isolation, path traversal, SCP injection |
-| P1 | 2, 10, 52 | HIGH | Log API, browser tool, canvas CSP |
-| P1 | 18, 19 | HIGH | pnpm + Node.js upgrades |
-| P1 | 32, 34, 35, 51, 53 | HIGH | CSRF, tlon injection, Copilot URL, ReDoS |
-| P2 | 15, 6, 13 | MEDIUM | Log injection, path traversal, recursion |
-| P2 | 20, 23, 25, 26, 38 | MEDIUM | Vite, TOCTOU, RegExp, shell injection |
-| P2 | 3, 4, 41, 42, 59 | MEDIUM | Channel PII (LINE, Discord, Synology, allowlist) |
-| P2 | 56-58, 61-62 | MEDIUM | Error disclosure, config exposure, skills trust |
-| P3 | 5, 7, 11-14 | MEDIUM | Info disclosure, config hardening |
-| P3 | 21-22, 24, 27 | MEDIUM | Input validation, defense-in-depth |
-| P3 | 37, 40, 43-47 | MEDIUM | Session fork, system events, extensions |
-| P3 | 60, 63-65 | MEDIUM | Provider errors, error redaction, JSON.parse |
+| Priority | Phases             | Severity | Category                                         |
+| -------- | ------------------ | -------- | ------------------------------------------------ |
+| P0       | 8                  | CRITICAL | WebSocket MitM                                   |
+| P1       | 17+50, 16, 33      | HIGH     | SSRF consistency, plugin auth, timing attacks    |
+| P1       | 1, 28, 29, 30      | HIGH     | PII in all core channels                         |
+| P1       | 9, 31, 48, 49      | HIGH     | Session isolation, path traversal, SCP injection |
+| P1       | 2, 10, 52          | HIGH     | Log API, browser tool, canvas CSP                |
+| P1       | 18, 19             | HIGH     | pnpm + Node.js upgrades                          |
+| P1       | 32, 34, 35, 51, 53 | HIGH     | CSRF, tlon injection, Copilot URL, ReDoS         |
+| P2       | 15, 6, 13          | MEDIUM   | Log injection, path traversal, recursion         |
+| P2       | 20, 23, 25, 26, 38 | MEDIUM   | Vite, TOCTOU, RegExp, shell injection            |
+| P2       | 3, 4, 41, 42, 59   | MEDIUM   | Channel PII (LINE, Discord, Synology, allowlist) |
+| P2       | 56-58, 61-62       | MEDIUM   | Error disclosure, config exposure, skills trust  |
+| P3       | 5, 7, 11-14        | MEDIUM   | Info disclosure, config hardening                |
+| P3       | 21-22, 24, 27      | MEDIUM   | Input validation, defense-in-depth               |
+| P3       | 37, 40, 43-47      | MEDIUM   | Session fork, system events, extensions          |
+| P3       | 60, 63-65          | MEDIUM   | Provider errors, error redaction, JSON.parse     |
 
 ---
 
 ## Accepted Risks
 
-| ID | Finding | Reason |
-|----|---------|--------|
-| SEC-MED-8 | `chat.history` returns full content | Required for UI; gated by WS auth |
-| SEC-R5-LOW-1–4 | Plugin integrity, rate limiter, Firecrawl, healthz | By design |
-| SEC-R6-LOW-1–6 | Temp files, auto-load, Windows, MediaFetchError, Math.random, media server | Mitigated by existing controls |
-| SEC-R7-LOW-1–7 | Voice metadata, pairing logs, OAuth IDs, Gemini CLI, rate limit, auth JSON, memory zeroing | Low risk / platform limitation |
-| SEC-R8-LOW-1–4 | Canvas innerHTML (non-user), Slack duplicate path, session memory path, OAuth client IDs | Low risk / by design |
-| SEC-DEP-MED-2–5 | protobufjs, chalk, @discordjs/opus, sqlite-vec | Verify-only; likely not affected |
+| ID              | Finding                                                                                    | Reason                            |
+| --------------- | ------------------------------------------------------------------------------------------ | --------------------------------- |
+| SEC-MED-8       | `chat.history` returns full content                                                        | Required for UI; gated by WS auth |
+| SEC-R5-LOW-1–4  | Plugin integrity, rate limiter, Firecrawl, healthz                                         | By design                         |
+| SEC-R6-LOW-1–6  | Temp files, auto-load, Windows, MediaFetchError, Math.random, media server                 | Mitigated by existing controls    |
+| SEC-R7-LOW-1–7  | Voice metadata, pairing logs, OAuth IDs, Gemini CLI, rate limit, auth JSON, memory zeroing | Low risk / platform limitation    |
+| SEC-R8-LOW-1–4  | Canvas innerHTML (non-user), Slack duplicate path, session memory path, OAuth client IDs   | Low risk / by design              |
+| SEC-DEP-MED-2–5 | protobufjs, chalk, @discordjs/opus, sqlite-vec                                             | Verify-only; likely not affected  |
 
 ---
 
@@ -552,64 +558,64 @@ After all phases:
 
 ## Commit Strategy (65 phases, ~45 commits after merging related phases)
 
-| # | Scope | Finding(s) | Files |
-|---|-------|-----------|-------|
-| 1 | `fix(whatsapp)` | HIGH-1,2,3 | 4 source |
-| 2 | `fix(gateway)` | HIGH-4 | 1 source |
-| 3 | `fix(line)` | MED-1,2 | 5 source |
-| 4 | `fix(discord)` | MED-3,4 + R6-MED-5 | 6 source |
-| 5 | `fix(gateway)` | MED-5,6 | 2 source |
-| 6 | `fix(agents)` | MED-7 | 1 source + tests |
-| 7 | `fix(routing)` | MED-8,9 | 2 source |
-| 8 | `fix(gateway)` | R5-CRIT-1 | 1 source + tests |
-| 9 | `fix(gateway)` | R5-HIGH-1 | 1 source + tests |
-| 10 | `fix(agents)` | R5-HIGH-2 | 1 source |
-| 11 | `fix(agents)` | R5-MED-1 | 1 source |
-| 12 | `fix(gateway)` | R5-MED-2 | 1 source |
-| 13 | `fix(agents)` | R5-MED-3 | 1 source + tests |
-| 14 | `fix(gateway)` | R5-MED-4 | 1 source |
-| 15 | `fix(gateway)` | R5-MED-5 | 1 source |
-| 16 | `fix(gateway)` | R6-HIGH-1 | 2 source |
-| 17 | `fix(agents)` | R6-HIGH-2,3,4 + R8-HIGH-3 | 4 source |
-| 18 | `fix(deps)` | DEP-HIGH-1 | 1 source |
-| 19 | `fix(infra)` | DEP-HIGH-2 | 2 source |
-| 20 | `fix(ui)` | DEP-MED-1 | 1 source |
-| 21 | `fix(sessions)` | R6-MED-1 | 1 source |
-| 22 | `fix(media)` | R6-MED-2 | 1 source |
-| 23 | `fix(infra)` | R6-MED-3 | 1 source |
-| 24 | `fix(plugins)` | R6-MED-4 | 1 source |
-| 25 | `fix(discord)` | R6-MED-5 | 1 source |
-| 26 | `fix(memory)` | R6-MED-6 | 1 source |
-| 27 | `docs(agents)` | R6-MED-7 | 1 source |
-| 28 | `fix(telegram)` | R7-HIGH-1, R7-MED-1 | 4 source |
-| 29 | `fix(signal)` | R7-HIGH-2 | 2 source |
-| 30 | `fix(imessage)` | R7-HIGH-3, R7-MED-4 | 3 source |
-| 31 | `fix(ui)` | R7-HIGH-4,5 | 3 source |
-| 32 | `fix(gateway)` | R7-HIGH-6 | 1 source |
-| 33 | `fix(security)` | R7-HIGH-7, R7-MED-16 | 2 source |
-| 34 | `fix(tlon)` | R7-HIGH-8 | 1 source |
-| 35 | `fix(extensions)` | R7-HIGH-9,10 | 2 source |
-| 36 | `fix(sessions)` | R7-MED-2 | 1 source |
-| 37 | `fix(agents)` | R7-MED-3 | 1 source |
-| 38 | `fix(gateway)` | R7-MED-5 | 1 source |
-| 39 | `fix(synology-chat)` | R7-MED-6,7 | 2 source |
-| 40 | `fix(diffs)` | R7-MED-8 | 1 source |
-| 41 | `fix(extensions)` | R7-MED-9,10 | 3 source |
-| 42 | `fix(zalouser)` | R7-MED-11 | 1 source |
-| 43 | `fix(gateway)` | R7-MED-12,13,14 | 3 source |
-| 44 | `fix(infra)` | R7-MED-15 | 1 source |
-| 45 | `fix(agents)` | R8-HIGH-1 | 1 source |
-| 46 | `fix(agents)` | R8-HIGH-2 | 1 source |
-| 47 | `fix(providers)` | R8-HIGH-4 | 1 source |
-| 48 | `fix(canvas)` | R8-HIGH-5 | 1 source |
-| 49 | `fix(agents)` | R8-HIGH-6 | 1 source |
-| 50 | `fix(agents)` | R8-MED-1 | 1 source |
-| 51 | `fix(gateway)` | R8-MED-2,3 | 1 source |
-| 52 | `fix(channels)` | R8-MED-4 | 1 source |
-| 53 | `fix(providers)` | R8-MED-5,6 | 2 source |
-| 54 | `fix(agents)` | R8-MED-7,8 | 2 source |
-| 55 | `fix(infra)` | R8-MED-9,10,11 | 3 source |
-| 56 | `fix(infra)` | R8-MED-12,13,14 | 4 source |
+| #   | Scope                | Finding(s)                | Files            |
+| --- | -------------------- | ------------------------- | ---------------- |
+| 1   | `fix(whatsapp)`      | HIGH-1,2,3                | 4 source         |
+| 2   | `fix(gateway)`       | HIGH-4                    | 1 source         |
+| 3   | `fix(line)`          | MED-1,2                   | 5 source         |
+| 4   | `fix(discord)`       | MED-3,4 + R6-MED-5        | 6 source         |
+| 5   | `fix(gateway)`       | MED-5,6                   | 2 source         |
+| 6   | `fix(agents)`        | MED-7                     | 1 source + tests |
+| 7   | `fix(routing)`       | MED-8,9                   | 2 source         |
+| 8   | `fix(gateway)`       | R5-CRIT-1                 | 1 source + tests |
+| 9   | `fix(gateway)`       | R5-HIGH-1                 | 1 source + tests |
+| 10  | `fix(agents)`        | R5-HIGH-2                 | 1 source         |
+| 11  | `fix(agents)`        | R5-MED-1                  | 1 source         |
+| 12  | `fix(gateway)`       | R5-MED-2                  | 1 source         |
+| 13  | `fix(agents)`        | R5-MED-3                  | 1 source + tests |
+| 14  | `fix(gateway)`       | R5-MED-4                  | 1 source         |
+| 15  | `fix(gateway)`       | R5-MED-5                  | 1 source         |
+| 16  | `fix(gateway)`       | R6-HIGH-1                 | 2 source         |
+| 17  | `fix(agents)`        | R6-HIGH-2,3,4 + R8-HIGH-3 | 4 source         |
+| 18  | `fix(deps)`          | DEP-HIGH-1                | 1 source         |
+| 19  | `fix(infra)`         | DEP-HIGH-2                | 2 source         |
+| 20  | `fix(ui)`            | DEP-MED-1                 | 1 source         |
+| 21  | `fix(sessions)`      | R6-MED-1                  | 1 source         |
+| 22  | `fix(media)`         | R6-MED-2                  | 1 source         |
+| 23  | `fix(infra)`         | R6-MED-3                  | 1 source         |
+| 24  | `fix(plugins)`       | R6-MED-4                  | 1 source         |
+| 25  | `fix(discord)`       | R6-MED-5                  | 1 source         |
+| 26  | `fix(memory)`        | R6-MED-6                  | 1 source         |
+| 27  | `docs(agents)`       | R6-MED-7                  | 1 source         |
+| 28  | `fix(telegram)`      | R7-HIGH-1, R7-MED-1       | 4 source         |
+| 29  | `fix(signal)`        | R7-HIGH-2                 | 2 source         |
+| 30  | `fix(imessage)`      | R7-HIGH-3, R7-MED-4       | 3 source         |
+| 31  | `fix(ui)`            | R7-HIGH-4,5               | 3 source         |
+| 32  | `fix(gateway)`       | R7-HIGH-6                 | 1 source         |
+| 33  | `fix(security)`      | R7-HIGH-7, R7-MED-16      | 2 source         |
+| 34  | `fix(tlon)`          | R7-HIGH-8                 | 1 source         |
+| 35  | `fix(extensions)`    | R7-HIGH-9,10              | 2 source         |
+| 36  | `fix(sessions)`      | R7-MED-2                  | 1 source         |
+| 37  | `fix(agents)`        | R7-MED-3                  | 1 source         |
+| 38  | `fix(gateway)`       | R7-MED-5                  | 1 source         |
+| 39  | `fix(synology-chat)` | R7-MED-6,7                | 2 source         |
+| 40  | `fix(diffs)`         | R7-MED-8                  | 1 source         |
+| 41  | `fix(extensions)`    | R7-MED-9,10               | 3 source         |
+| 42  | `fix(zalouser)`      | R7-MED-11                 | 1 source         |
+| 43  | `fix(gateway)`       | R7-MED-12,13,14           | 3 source         |
+| 44  | `fix(infra)`         | R7-MED-15                 | 1 source         |
+| 45  | `fix(agents)`        | R8-HIGH-1                 | 1 source         |
+| 46  | `fix(agents)`        | R8-HIGH-2                 | 1 source         |
+| 47  | `fix(providers)`     | R8-HIGH-4                 | 1 source         |
+| 48  | `fix(canvas)`        | R8-HIGH-5                 | 1 source         |
+| 49  | `fix(agents)`        | R8-HIGH-6                 | 1 source         |
+| 50  | `fix(agents)`        | R8-MED-1                  | 1 source         |
+| 51  | `fix(gateway)`       | R8-MED-2,3                | 1 source         |
+| 52  | `fix(channels)`      | R8-MED-4                  | 1 source         |
+| 53  | `fix(providers)`     | R8-MED-5,6                | 2 source         |
+| 54  | `fix(agents)`        | R8-MED-7,8                | 2 source         |
+| 55  | `fix(infra)`         | R8-MED-9,10,11            | 3 source         |
+| 56  | `fix(infra)`         | R8-MED-12,13,14           | 4 source         |
 
 **Total**: ~70 source files, ~10-12 test files
 
@@ -617,26 +623,26 @@ After all phases:
 
 ## Audit Agent Summary
 
-| # | Agent Type | Round | Purpose | Findings |
-|---|-----------|-------|---------|----------|
-| 1 | `security-auditor` | 5 | Core codebase audit | 1C, 1H, 5M, 4L |
-| 2 | `planner` | 5 | Remediation plan (Rounds 1-4) | Plan output |
-| 3 | `Explore` | 5 | Round 5 detail gathering | Line verification |
-| 4 | `security-auditor` | 6 | Completeness verification | 13 missing instances |
-| 5 | `security-auditor` | 6 | Fresh sweep (media, config, plugins) | 2H, 7M, 10L |
-| 6 | `security-auditor` | 6 | Edge cases (SSRF, injection, crypto) | 3H, 6M, 8L |
-| 7 | `general-purpose` | 6 | Web research (dependency CVEs) | 2H, 3M, 17 safe |
-| 8 | `security-auditor` | 7 | Unexplored code (Telegram, Signal, iMessage) | 3H, 5M, 8L |
-| 9 | `security-auditor` | 7 | Extension plugins (42 packages) | 3H, 7M, 7L |
-| 10 | `security-auditor` | 7 | Secrets, crypto, auth flows | 2H, 5M, 13L |
-| 11 | `security-auditor` | 7 | Web UI, protocol, HTTP endpoints | 3H, 5M, 12L |
-| 12 | `general-purpose` | 7 | Long-tail CVEs + product CVE history | Updates + 20+ CVE confirmations |
-| 13 | `security-auditor` | 8 | CLI commands, auto-reply pipeline | 2H, 5M, 10L |
-| 14 | `security-auditor` | 8 | Providers, config/sessions, secrets | 2H, 3M, 3L |
-| 15 | `security-auditor` | 8 | Slack HTTP, canvas host, skills/tools | 2H, 4M, 12L |
-| 16 | `security-auditor` | 8 | Deserialization, errors, regex, TOCTOU | 2H, 6M, 4L |
-| 17 | `general-purpose` | 8 | Web research (Grammy, Baileys, Express, supply chain) | 30+ CVE product updates, supply chain alerts |
-| — | `Explore` | 6 | Completeness verification | Instance count updates |
+| #   | Agent Type         | Round | Purpose                                               | Findings                                     |
+| --- | ------------------ | ----- | ----------------------------------------------------- | -------------------------------------------- |
+| 1   | `security-auditor` | 5     | Core codebase audit                                   | 1C, 1H, 5M, 4L                               |
+| 2   | `planner`          | 5     | Remediation plan (Rounds 1-4)                         | Plan output                                  |
+| 3   | `Explore`          | 5     | Round 5 detail gathering                              | Line verification                            |
+| 4   | `security-auditor` | 6     | Completeness verification                             | 13 missing instances                         |
+| 5   | `security-auditor` | 6     | Fresh sweep (media, config, plugins)                  | 2H, 7M, 10L                                  |
+| 6   | `security-auditor` | 6     | Edge cases (SSRF, injection, crypto)                  | 3H, 6M, 8L                                   |
+| 7   | `general-purpose`  | 6     | Web research (dependency CVEs)                        | 2H, 3M, 17 safe                              |
+| 8   | `security-auditor` | 7     | Unexplored code (Telegram, Signal, iMessage)          | 3H, 5M, 8L                                   |
+| 9   | `security-auditor` | 7     | Extension plugins (42 packages)                       | 3H, 7M, 7L                                   |
+| 10  | `security-auditor` | 7     | Secrets, crypto, auth flows                           | 2H, 5M, 13L                                  |
+| 11  | `security-auditor` | 7     | Web UI, protocol, HTTP endpoints                      | 3H, 5M, 12L                                  |
+| 12  | `general-purpose`  | 7     | Long-tail CVEs + product CVE history                  | Updates + 20+ CVE confirmations              |
+| 13  | `security-auditor` | 8     | CLI commands, auto-reply pipeline                     | 2H, 5M, 10L                                  |
+| 14  | `security-auditor` | 8     | Providers, config/sessions, secrets                   | 2H, 3M, 3L                                   |
+| 15  | `security-auditor` | 8     | Slack HTTP, canvas host, skills/tools                 | 2H, 4M, 12L                                  |
+| 16  | `security-auditor` | 8     | Deserialization, errors, regex, TOCTOU                | 2H, 6M, 4L                                   |
+| 17  | `general-purpose`  | 8     | Web research (Grammy, Baileys, Express, supply chain) | 30+ CVE product updates, supply chain alerts |
+| —   | `Explore`          | 6     | Completeness verification                             | Instance count updates                       |
 
 **Total: 18 agents** (all complete)
 
@@ -644,11 +650,11 @@ After all phases:
 
 ## Diminishing Returns Analysis
 
-| Round | New CRIT | New HIGH | New MED | New LOW | Pattern |
-|-------|----------|----------|---------|---------|---------|
-| 1-5 | 1 | 5 | 12 | 4 | Core architecture issues |
-| 6 | 0 | 5 | 8 | 6 | SSRF consistency, deps |
-| 7 | 0 | 10 | 11 | 7 | Remaining channels, extensions, UI |
-| 8 | 0 | 6 | 10 | 4 | CLI, providers, canvas, cross-cutting |
+| Round | New CRIT | New HIGH | New MED | New LOW | Pattern                               |
+| ----- | -------- | -------- | ------- | ------- | ------------------------------------- |
+| 1-5   | 1        | 5        | 12      | 4       | Core architecture issues              |
+| 6     | 0        | 5        | 8       | 6       | SSRF consistency, deps                |
+| 7     | 0        | 10       | 11      | 7       | Remaining channels, extensions, UI    |
+| 8     | 0        | 6        | 10      | 4       | CLI, providers, canvas, cross-cutting |
 
 Round 8 found **zero new CRITICALs**. The 6 HIGHs are in previously unexplored areas (SCP media staging, session export command, provider discovery, Copilot URL derivation, canvas host, mention regex). These are progressively more niche attack surfaces requiring more specific access conditions (authorized user, config write, MITM position).

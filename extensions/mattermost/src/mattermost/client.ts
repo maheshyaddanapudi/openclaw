@@ -1,3 +1,5 @@
+import { fetchWithSsrFGuard, type GuardedFetchOptions } from "openclaw/plugin-sdk/mattermost";
+
 export type MattermostClient = {
   baseUrl: string;
   apiBaseUrl: string;
@@ -70,6 +72,26 @@ export async function readMattermostError(res: Response): Promise<string> {
   return await res.text();
 }
 
+/**
+ * SSRF-guarded fetch for Mattermost API calls. The base URL is
+ * operator-configured, so we use trusted env proxy mode to allow
+ * internal endpoints while still performing DNS pinning and redirect
+ * validation.
+ */
+async function mattermostGuardedFetch(
+  url: string,
+  init?: RequestInit,
+  auditContext = "mattermost-api",
+): Promise<{ response: Response; release: () => Promise<void> }> {
+  const guardParams: GuardedFetchOptions = {
+    url,
+    init,
+    mode: "trusted_env_proxy",
+    auditContext,
+  };
+  return await fetchWithSsrFGuard(guardParams);
+}
+
 export function createMattermostClient(params: {
   baseUrl: string;
   botToken: string;
@@ -81,7 +103,7 @@ export function createMattermostClient(params: {
   }
   const apiBaseUrl = `${baseUrl}/api/v4`;
   const token = params.botToken.trim();
-  const fetchImpl = params.fetchImpl ?? fetch;
+  const fetchImpl = params.fetchImpl;
 
   const request = async <T>(path: string, init?: RequestInit): Promise<T> => {
     const url = buildMattermostApiUrl(baseUrl, path);
@@ -90,7 +112,41 @@ export function createMattermostClient(params: {
     if (typeof init?.body === "string" && !headers.has("Content-Type")) {
       headers.set("Content-Type", "application/json");
     }
-    const res = await fetchImpl(url, { ...init, headers });
+
+    // Use caller-provided fetchImpl or SSRF-guarded fetch.
+    const requestInit = { ...init, headers };
+    let res: Response;
+    if (fetchImpl) {
+      res = await fetchImpl(url, requestInit);
+    } else {
+      const { response, release } = await mattermostGuardedFetch(url, requestInit);
+      res = response;
+      // Ensure the dispatcher is released after the response body is consumed.
+      const origJson = res.json.bind(res);
+      const origText = res.text.bind(res);
+      let released = false;
+      const doRelease = async () => {
+        if (!released) {
+          released = true;
+          await release();
+        }
+      };
+      res.json = async () => {
+        try {
+          return await origJson();
+        } finally {
+          await doRelease();
+        }
+      };
+      res.text = async () => {
+        try {
+          return await origText();
+        } finally {
+          await doRelease();
+        }
+      };
+    }
+
     if (!res.ok) {
       const detail = await readMattermostError(res);
       throw new Error(
@@ -256,23 +312,34 @@ export async function uploadMattermostFile(
   form.append("files", blob, fileName);
   form.append("channel_id", params.channelId);
 
-  const res = await fetch(`${client.apiBaseUrl}/files`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${client.token}`,
+  // SSRF guard: upload uses the operator-configured Mattermost base URL.
+  const { response: res, release } = await mattermostGuardedFetch(
+    `${client.apiBaseUrl}/files`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${client.token}`,
+      },
+      body: form,
     },
-    body: form,
-  });
+    "mattermost-file-upload",
+  );
 
-  if (!res.ok) {
-    const detail = await readMattermostError(res);
-    throw new Error(`Mattermost API ${res.status} ${res.statusText}: ${detail || "unknown error"}`);
-  }
+  try {
+    if (!res.ok) {
+      const detail = await readMattermostError(res);
+      throw new Error(
+        `Mattermost API ${res.status} ${res.statusText}: ${detail || "unknown error"}`,
+      );
+    }
 
-  const data = (await res.json()) as { file_infos?: MattermostFileInfo[] };
-  const info = data.file_infos?.[0];
-  if (!info?.id) {
-    throw new Error("Mattermost file upload failed");
+    const data = (await res.json()) as { file_infos?: MattermostFileInfo[] };
+    const info = data.file_infos?.[0];
+    if (!info?.id) {
+      throw new Error("Mattermost file upload failed");
+    }
+    return info;
+  } finally {
+    await release();
   }
-  return info;
 }

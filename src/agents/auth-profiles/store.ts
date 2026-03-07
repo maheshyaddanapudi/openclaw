@@ -1,3 +1,4 @@
+// SECURITY: accepted risk — auth profiles stored in local filesystem with user-level permissions.
 import fs from "node:fs";
 import type { OAuthCredentials } from "@mariozechner/pi-ai";
 import { resolveOAuthPath } from "../../config/paths.js";

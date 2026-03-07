@@ -1,3 +1,5 @@
+// SECURITY: accepted risk — canvas host serves files from configured root dir only;
+// validated by resolveFileWithinRoot.
 import * as fsSync from "node:fs";
 import fs from "node:fs/promises";
 import http, { type IncomingMessage, type Server, type ServerResponse } from "node:http";
@@ -54,6 +56,16 @@ export type CanvasHostHandler = {
   handleUpgrade: (req: IncomingMessage, socket: Duplex, head: Buffer) => boolean;
   close: () => Promise<void>;
 };
+
+/** SEC-R8-HIGH-5: Apply security headers to all canvas host HTTP responses. */
+function setCanvasSecurityHeaders(res: ServerResponse) {
+  res.setHeader(
+    "Content-Security-Policy",
+    "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' ws: wss:; img-src 'self' data: blob:; frame-ancestors 'self'",
+  );
+  res.setHeader("X-Frame-Options", "SAMEORIGIN");
+  res.setHeader("X-Content-Type-Options", "nosniff");
+}
 
 function defaultIndexHTML() {
   return `<!doctype html>
@@ -305,6 +317,7 @@ export async function createCanvasHostHandler(
     }
 
     try {
+      setCanvasSecurityHeaders(res);
       const url = new URL(urlRaw, "http://localhost");
       if (url.pathname === CANVAS_WS_PATH) {
         res.statusCode = liveReload ? 426 : 404;
@@ -424,11 +437,13 @@ export async function startCanvasHost(opts: CanvasHostServerOpts): Promise<Canva
       if (await handler.handleHttpRequest(req, res)) {
         return;
       }
+      setCanvasSecurityHeaders(res);
       res.statusCode = 404;
       res.setHeader("Content-Type", "text/plain; charset=utf-8");
       res.end("Not Found");
     })().catch((err) => {
       opts.runtime.error(`canvasHost request failed: ${String(err)}`);
+      setCanvasSecurityHeaders(res);
       res.statusCode = 500;
       res.setHeader("Content-Type", "text/plain; charset=utf-8");
       res.end("error");

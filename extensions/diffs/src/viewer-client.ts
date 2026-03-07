@@ -227,6 +227,8 @@ function createRenderOptions(payload: DiffViewerPayload): FileDiffOptions<undefi
     overflow: viewerState.wrapEnabled ? "wrap" : "scroll",
     disableLineNumbers: payload.options.disableLineNumbers,
     disableBackground: !viewerState.backgroundEnabled,
+    // SECURITY: unsafeCSS contains server-authored CSS custom properties (font family,
+    // size, line height) generated in render.ts. Not user input — safe to pass through.
     unsafeCSS: payload.options.unsafeCSS,
     renderHeaderMetadata: () => createToolbar(),
   };

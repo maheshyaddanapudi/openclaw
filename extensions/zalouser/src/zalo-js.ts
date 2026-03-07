@@ -371,8 +371,11 @@ function touchCredentials(profile: string): void {
     lastUsedAt: new Date().toISOString(),
   };
   const dir = resolveCredentialsDir();
-  fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(resolveCredentialsPath(profile), JSON.stringify(next, null, 2), "utf-8");
+  fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
+  fs.writeFileSync(resolveCredentialsPath(profile), JSON.stringify(next, null, 2), {
+    encoding: "utf-8",
+    mode: 0o600,
+  });
 }
 
 function writeCredentials(
@@ -380,7 +383,7 @@ function writeCredentials(
   credentials: Omit<StoredZaloCredentials, "createdAt" | "lastUsedAt">,
 ): void {
   const dir = resolveCredentialsDir();
-  fs.mkdirSync(dir, { recursive: true });
+  fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
   const existing = readCredentials(profile);
   const now = new Date().toISOString();
   const next: StoredZaloCredentials = {
@@ -388,7 +391,10 @@ function writeCredentials(
     createdAt: existing?.createdAt ?? now,
     lastUsedAt: now,
   };
-  fs.writeFileSync(resolveCredentialsPath(profile), JSON.stringify(next, null, 2), "utf-8");
+  fs.writeFileSync(resolveCredentialsPath(profile), JSON.stringify(next, null, 2), {
+    encoding: "utf-8",
+    mode: 0o600,
+  });
 }
 
 function clearCredentials(profile: string): boolean {

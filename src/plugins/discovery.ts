@@ -1,3 +1,5 @@
+// SECURITY: accepted risk — plugin discovery trusts local filesystem.
+// Validated by package.json schema.
 import fs from "node:fs";
 import path from "node:path";
 import { openBoundaryFileSync } from "../infra/boundary-file-read.js";

@@ -11,16 +11,48 @@ import {
   validateConfigObjectWithPlugins,
   writeConfigFile,
 } from "../../config/config.js";
+import { redactConfigObject } from "../../config/redact-snapshot.js";
 import {
   getConfigOverrides,
   resetConfigOverrides,
   setConfigOverride,
   unsetConfigOverride,
 } from "../../config/runtime-overrides.js";
+import { isSensitiveConfigPath } from "../../config/schema.hints.js";
 import { rejectUnauthorizedCommand, requireCommandFlagEnabled } from "./command-gates.js";
 import type { CommandHandler } from "./commands-types.js";
 import { parseConfigCommand } from "./config-commands.js";
 import { parseDebugCommand } from "./debug-commands.js";
+
+/**
+ * Allowlist of top-level config path prefixes that `/debug set` may
+ * override.  Paths outside this list are rejected to prevent
+ * arbitrary config injection via chat commands.
+ */
+const DEBUG_SET_ALLOWED_PREFIXES = new Set([
+  "agent",
+  "agents",
+  "session",
+  "logging",
+  "media",
+  "channels",
+  "routing",
+  "commands",
+  "reply",
+  "providers",
+  "gateway",
+  "plugins",
+  "env",
+]);
+
+function isDebugSetPathAllowed(pathRaw: string): boolean {
+  const normalized = pathRaw.trim().toLowerCase();
+  if (!normalized) {
+    return false;
+  }
+  const firstSegment = normalized.split(".")[0];
+  return DEBUG_SET_ALLOWED_PREFIXES.has(firstSegment);
+}
 
 export const handleConfigCommand: CommandHandler = async (params, allowTextCommands) => {
   if (!allowTextCommands) {
@@ -90,7 +122,9 @@ export const handleConfigCommand: CommandHandler = async (params, allowTextComma
           reply: { text: `⚠️ ${parsedPath.error ?? "Invalid path."}` },
         };
       }
-      const value = getConfigValueAtPath(parsedBase, parsedPath.path);
+      // Redact sensitive values (tokens, API keys, passwords) before returning
+      const redactedBase = redactConfigObject(parsedBase);
+      const value = getConfigValueAtPath(redactedBase, parsedPath.path);
       const rendered = JSON.stringify(value ?? null, null, 2);
       return {
         shouldContinue: false,
@@ -99,7 +133,9 @@ export const handleConfigCommand: CommandHandler = async (params, allowTextComma
         },
       };
     }
-    const json = JSON.stringify(parsedBase, null, 2);
+    // Redact sensitive values (tokens, API keys, passwords) before returning
+    const redactedBase = redactConfigObject(parsedBase);
+    const json = JSON.stringify(redactedBase, null, 2);
     return {
       shouldContinue: false,
       reply: { text: `⚙️ Config (raw):\n\`\`\`json\n${json}\n\`\`\`` },
@@ -207,7 +243,9 @@ export const handleDebugCommand: CommandHandler = async (params, allowTextComman
         reply: { text: "⚙️ Debug overrides: (none)" },
       };
     }
-    const json = JSON.stringify(overrides, null, 2);
+    // Redact sensitive values before showing overrides
+    const redactedOverrides = redactConfigObject(overrides);
+    const json = JSON.stringify(redactedOverrides, null, 2);
     return {
       shouldContinue: false,
       reply: {
@@ -244,6 +282,25 @@ export const handleDebugCommand: CommandHandler = async (params, allowTextComman
     };
   }
   if (debugCommand.action === "set") {
+    // Validate that the path is within the safe allowlist to prevent
+    // arbitrary config injection via chat commands.
+    if (!isDebugSetPathAllowed(debugCommand.path)) {
+      return {
+        shouldContinue: false,
+        reply: {
+          text: `⚠️ Debug override path "${debugCommand.path}" is not in the allowed set of configurable paths.`,
+        },
+      };
+    }
+    // Block setting sensitive paths (tokens, API keys, passwords) via /debug
+    if (isSensitiveConfigPath(debugCommand.path)) {
+      return {
+        shouldContinue: false,
+        reply: {
+          text: `⚠️ Cannot set sensitive config path "${debugCommand.path}" via /debug. Use the config file or secrets manager instead.`,
+        },
+      };
+    }
     const result = setConfigOverride(debugCommand.path, debugCommand.value);
     if (!result.ok) {
       return {

@@ -1,4 +1,5 @@
 import YAML from "yaml";
+import { isBlockedObjectKey } from "../infra/prototype-keys.js";
 
 export type ParsedFrontmatter = Record<string, string>;
 
@@ -61,7 +62,7 @@ function parseYamlFrontmatter(block: string): Record<string, ParsedYamlValue> | 
     const result: Record<string, ParsedYamlValue> = {};
     for (const [rawKey, value] of Object.entries(parsed as Record<string, unknown>)) {
       const key = rawKey.trim();
-      if (!key) {
+      if (!key || isBlockedObjectKey(key)) {
         continue;
       }
       const coerced = coerceYamlFrontmatterValue(value);
@@ -114,7 +115,7 @@ function parseLineFrontmatter(block: string): Record<string, ParsedFrontmatterLi
 
     const key = match[1];
     const inlineValue = match[2].trim();
-    if (!key) {
+    if (!key || isBlockedObjectKey(key)) {
       i += 1;
       continue;
     }
@@ -154,6 +155,9 @@ function lineFrontmatterToPlain(
 ): ParsedFrontmatter {
   const result: ParsedFrontmatter = {};
   for (const [key, entry] of Object.entries(parsed)) {
+    if (isBlockedObjectKey(key)) {
+      continue;
+    }
     result[key] = entry.value;
   }
   return result;
@@ -206,6 +210,9 @@ export function parseFrontmatterBlock(content: string): ParsedFrontmatter {
 
   const merged: ParsedFrontmatter = {};
   for (const [key, yamlValue] of Object.entries(yamlParsed)) {
+    if (isBlockedObjectKey(key)) {
+      continue;
+    }
     merged[key] = yamlValue.value;
     const lineEntry = lineParsed[key];
     if (!lineEntry) {
@@ -217,6 +224,9 @@ export function parseFrontmatterBlock(content: string): ParsedFrontmatter {
   }
 
   for (const [key, lineEntry] of Object.entries(lineParsed)) {
+    if (isBlockedObjectKey(key)) {
+      continue;
+    }
     if (!(key in merged)) {
       merged[key] = lineEntry.value;
     }

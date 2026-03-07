@@ -64,6 +64,8 @@ export {
   requireOpenAllowFrom,
 } from "../config/zod-schema.core.js";
 export { createDedupeCache } from "../infra/dedupe.js";
+export { fetchWithSsrFGuard } from "../infra/net/fetch-guard.js";
+export type { GuardedFetchOptions } from "../infra/net/fetch-guard.js";
 export { rawDataToString } from "../infra/ws.js";
 export { registerPluginHttpRoute } from "../plugins/http-registry.js";
 export { emptyPluginConfigSchema } from "../plugins/config-schema.js";

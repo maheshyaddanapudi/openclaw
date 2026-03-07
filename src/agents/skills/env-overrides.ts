@@ -139,13 +139,20 @@ function applySkillConfigEnvOverrides(params: {
 }
 
 function createEnvReverter(updates: EnvUpdate[]) {
+  // NOTE: env overrides are process-global; concurrent agent runs sharing
+  // the same process will see each other's overrides. This is an accepted
+  // limitation — each run should apply/revert as a pair.
   return () => {
-    for (const update of updates) {
-      if (update.prev === undefined) {
-        delete process.env[update.key];
-      } else {
-        process.env[update.key] = update.prev;
+    try {
+      for (const update of updates) {
+        if (update.prev === undefined) {
+          delete process.env[update.key];
+        } else {
+          process.env[update.key] = update.prev;
+        }
       }
+    } catch {
+      // Best-effort cleanup: ensure partial revert does not propagate.
     }
   };
 }

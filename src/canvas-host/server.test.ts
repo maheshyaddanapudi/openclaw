@@ -312,3 +312,69 @@ describe("canvas host", () => {
     }
   });
 });
+
+describe("canvas host security headers", () => {
+  const quietRuntime = {
+    ...defaultRuntime,
+    log: (..._args: Parameters<typeof console.log>) => {},
+  };
+  let fixtureRoot = "";
+
+  beforeAll(async () => {
+    fixtureRoot = await fs.mkdtemp(path.join(os.tmpdir(), "openclaw-canvas-sec-"));
+  });
+
+  afterAll(async () => {
+    await fs.rm(fixtureRoot, { recursive: true, force: true });
+  });
+
+  it("sets CSP, X-Frame-Options, and X-Content-Type-Options headers on HTML responses", async () => {
+    const dir = path.join(fixtureRoot, "sec-1");
+    await fs.mkdir(dir, { recursive: true });
+    await fs.writeFile(path.join(dir, "index.html"), "<html><body>test</body></html>", "utf8");
+
+    const server = await startCanvasHost({
+      runtime: quietRuntime,
+      rootDir: dir,
+      port: 0,
+      listenHost: "127.0.0.1",
+      allowInTests: true,
+      liveReload: false,
+    });
+
+    try {
+      const res = await fetch(`http://127.0.0.1:${server.port}${CANVAS_HOST_PATH}/`);
+      expect(res.status).toBe(200);
+      expect(res.headers.get("x-frame-options")).toBe("SAMEORIGIN");
+      expect(res.headers.get("x-content-type-options")).toBe("nosniff");
+      const csp = res.headers.get("content-security-policy");
+      expect(csp).toContain("default-src 'self'");
+      expect(csp).toContain("frame-ancestors 'self'");
+    } finally {
+      await server.close();
+    }
+  });
+
+  it("sets security headers on 404 responses", async () => {
+    const dir = path.join(fixtureRoot, "sec-2");
+    await fs.mkdir(dir, { recursive: true });
+
+    const server = await startCanvasHost({
+      runtime: quietRuntime,
+      rootDir: dir,
+      port: 0,
+      listenHost: "127.0.0.1",
+      allowInTests: true,
+      liveReload: false,
+    });
+
+    try {
+      const res = await fetch(`http://127.0.0.1:${server.port}${CANVAS_HOST_PATH}/nonexistent.txt`);
+      expect(res.status).toBe(404);
+      expect(res.headers.get("x-frame-options")).toBe("SAMEORIGIN");
+      expect(res.headers.get("x-content-type-options")).toBe("nosniff");
+    } finally {
+      await server.close();
+    }
+  });
+});

@@ -57,7 +57,11 @@ export function resolveSessionFilePathOptions(params: {
   return undefined;
 }
 
+// SECURITY: accepted risk — session slugs from user input are sanitized to safe characters.
 export const SAFE_SESSION_ID_RE = /^[a-z0-9][a-z0-9._-]{0,127}$/i;
+
+/** Maximum length for topic IDs to prevent excessively long file paths. */
+const MAX_TOPIC_ID_LENGTH = 256;
 
 export function validateSessionId(sessionId: string): string {
   const trimmed = sessionId.trim();
@@ -238,12 +242,16 @@ export function resolveSessionTranscriptPathInDir(
   topicId?: string | number,
 ): string {
   const safeSessionId = validateSessionId(sessionId);
-  const safeTopicId =
+  const rawTopicId =
     typeof topicId === "string"
-      ? encodeURIComponent(topicId)
+      ? topicId
       : typeof topicId === "number"
         ? String(topicId)
         : undefined;
+  if (rawTopicId !== undefined && rawTopicId.length > MAX_TOPIC_ID_LENGTH) {
+    throw new Error(`Topic ID exceeds maximum length of ${MAX_TOPIC_ID_LENGTH} characters`);
+  }
+  const safeTopicId = rawTopicId !== undefined ? encodeURIComponent(rawTopicId) : undefined;
   const fileName =
     safeTopicId !== undefined
       ? `${safeSessionId}-topic-${safeTopicId}.jsonl`

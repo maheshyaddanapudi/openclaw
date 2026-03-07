@@ -38,6 +38,17 @@ export function getSynologyWebhookRateLimiterCountForTest(): number {
   return rateLimiters.size;
 }
 
+/**
+ * Redact a user identifier for log output.
+ * Shows only the first 2 characters followed by asterisks.
+ */
+function redactUserId(value: string): string {
+  if (value.length <= 2) {
+    return "**";
+  }
+  return `${value.slice(0, 2)}${"*".repeat(Math.min(value.length - 2, 6))}`;
+}
+
 /** Read the full request body as a string. */
 async function readBody(req: IncomingMessage): Promise<
   | { ok: true; body: string }
@@ -287,7 +298,7 @@ export function createWebhookHandler(deps: WebhookHandlerDeps) {
       return;
     }
 
-    // DM policy authorization
+    // DM policy authorization — redact user_id in logs
     const auth = authorizeUserForDm(payload.user_id, account.dmPolicy, account.allowedUserIds);
     if (!auth.allowed) {
       if (auth.reason === "disabled") {
@@ -301,14 +312,14 @@ export function createWebhookHandler(deps: WebhookHandlerDeps) {
         });
         return;
       }
-      log?.warn(`Unauthorized user: ${payload.user_id}`);
+      log?.warn(`Unauthorized user: ${redactUserId(payload.user_id)}`);
       respondJson(res, 403, { error: "User not authorized" });
       return;
     }
 
-    // Rate limit
+    // Rate limit — redact user_id in logs
     if (!rateLimiter.check(payload.user_id)) {
-      log?.warn(`Rate limit exceeded for user: ${payload.user_id}`);
+      log?.warn(`Rate limit exceeded for user: ${redactUserId(payload.user_id)}`);
       respondJson(res, 429, { error: "Rate limit exceeded" });
       return;
     }
@@ -326,8 +337,8 @@ export function createWebhookHandler(deps: WebhookHandlerDeps) {
       return;
     }
 
-    const preview = cleanText.length > 100 ? `${cleanText.slice(0, 100)}...` : cleanText;
-    log?.info(`Message from ${payload.username} (${payload.user_id}): ${preview}`);
+    // Log message receipt without exposing user IDs or message content
+    log?.info(`Message from user ${redactUserId(payload.user_id)} (${cleanText.length} chars)`);
 
     // ACK immediately so Synology Chat won't remain in "Processing..."
     respondNoContent(res);
@@ -351,7 +362,7 @@ export function createWebhookHandler(deps: WebhookHandlerDeps) {
         replyUserId = String(chatUserId);
       } else {
         log?.warn(
-          `Could not resolve Chat API user_id for "${payload.username}" — falling back to webhook user_id ${payload.user_id}. Reply delivery may fail.`,
+          `Could not resolve Chat API user_id for user ${redactUserId(payload.user_id)} — falling back to webhook user_id. Reply delivery may fail.`,
         );
       }
 
@@ -376,12 +387,11 @@ export function createWebhookHandler(deps: WebhookHandlerDeps) {
       // Send reply back to Synology Chat using the resolved Chat user_id
       if (reply) {
         await sendMessage(account.incomingUrl, reply, replyUserId, account.allowInsecureSsl);
-        const replyPreview = reply.length > 100 ? `${reply.slice(0, 100)}...` : reply;
-        log?.info(`Reply sent to ${payload.username} (${replyUserId}): ${replyPreview}`);
+        log?.info(`Reply sent to user ${redactUserId(replyUserId)} (${reply.length} chars)`);
       }
     } catch (err) {
-      const errMsg = err instanceof Error ? `${err.message}\n${err.stack}` : String(err);
-      log?.error(`Failed to process message from ${payload.username}: ${errMsg}`);
+      const errMsg = err instanceof Error ? err.message : String(err);
+      log?.error(`Failed to process message from user ${redactUserId(payload.user_id)}: ${errMsg}`);
       await sendMessage(
         account.incomingUrl,
         "Sorry, an error occurred while processing your message.",

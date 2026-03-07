@@ -1,9 +1,23 @@
 import type { OAuthCredentials } from "@mariozechner/pi-ai";
 import { formatCliCommand } from "../cli/command-format.js";
+import { redactSensitiveText } from "../logging/redact.js";
 
 const QWEN_OAUTH_BASE_URL = "https://chat.qwen.ai";
 const QWEN_OAUTH_TOKEN_ENDPOINT = `${QWEN_OAUTH_BASE_URL}/api/v1/oauth2/token`;
 const QWEN_OAUTH_CLIENT_ID = "f0304373b74a44d2b584a3fb70ca9e56";
+
+/** Maximum characters of an error response body to include in error messages. */
+const MAX_ERROR_BODY_LEN = 200;
+
+/**
+ * Truncate and redact an HTTP error response body so it is safe to
+ * include in error messages and logs without leaking tokens or
+ * overwhelming output.
+ */
+function sanitizeErrorBody(body: string): string {
+  const truncated = body.length > MAX_ERROR_BODY_LEN ? body.slice(0, MAX_ERROR_BODY_LEN) : body;
+  return redactSensitiveText(truncated);
+}
 
 export async function refreshQwenPortalCredentials(
   credentials: OAuthCredentials,
@@ -33,7 +47,7 @@ export async function refreshQwenPortalCredentials(
         `Qwen OAuth refresh token expired or invalid. Re-authenticate with \`${formatCliCommand("openclaw models auth login --provider qwen-portal")}\`.`,
       );
     }
-    throw new Error(`Qwen OAuth refresh failed: ${text || response.statusText}`);
+    throw new Error(`Qwen OAuth refresh failed: ${sanitizeErrorBody(text) || response.statusText}`);
   }
 
   const payload = (await response.json()) as {

@@ -220,7 +220,8 @@ export function loadSessionStore(
   let fileStat = getFileStatSnapshot(storePath);
   let mtimeMs = fileStat?.mtimeMs;
   let serializedFromDisk: string | undefined;
-  const maxReadAttempts = process.platform === "win32" ? 3 : 1;
+  // Retry on Windows (mid-write) and on NFS (ESTALE when file handle is stale).
+  const maxReadAttempts = process.platform === "win32" ? 3 : 2;
   const retryBuf = maxReadAttempts > 1 ? new Int32Array(new SharedArrayBuffer(4)) : undefined;
   for (let attempt = 0; attempt < maxReadAttempts; attempt++) {
     try {
@@ -238,11 +239,16 @@ export function loadSessionStore(
       fileStat = getFileStatSnapshot(storePath) ?? fileStat;
       mtimeMs = fileStat?.mtimeMs;
       break;
-    } catch {
-      // File missing, locked, or transiently corrupt — retry on Windows.
+    } catch (readErr) {
+      // File missing, locked, transiently corrupt, or NFS ESTALE — retry.
       if (attempt < maxReadAttempts - 1) {
-        Atomics.wait(retryBuf!, 0, 0, 50);
-        continue;
+        const errCode = getErrorCode(readErr);
+        const isTransient =
+          process.platform === "win32" || errCode === "ESTALE" || errCode === "EIO";
+        if (isTransient) {
+          Atomics.wait(retryBuf!, 0, 0, 50);
+          continue;
+        }
       }
       // Final attempt failed; proceed with an empty store.
     }

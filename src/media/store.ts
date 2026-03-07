@@ -20,6 +20,21 @@ const MEDIA_FILE_MODE = 0o644;
 type RequestImpl = typeof httpRequest;
 type ResolvePinnedHostnameImpl = typeof resolvePinnedHostname;
 
+/** Maximum download size in bytes. Configurable via OPENCLAW_MEDIA_DOWNLOAD_MAX_BYTES. Default 500MB. */
+const DEFAULT_DOWNLOAD_MAX_BYTES = 500 * 1024 * 1024;
+
+function resolveDownloadMaxBytes(): number {
+  const raw = process.env.OPENCLAW_MEDIA_DOWNLOAD_MAX_BYTES?.trim();
+  if (!raw) {
+    return DEFAULT_DOWNLOAD_MAX_BYTES;
+  }
+  const parsed = Number.parseInt(raw, 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return DEFAULT_DOWNLOAD_MAX_BYTES;
+  }
+  return parsed;
+}
+
 const defaultHttpRequestImpl: RequestImpl = httpRequest;
 const defaultHttpsRequestImpl: RequestImpl = httpsRequest;
 const defaultResolvePinnedHostnameImpl: ResolvePinnedHostnameImpl = resolvePinnedHostname;
@@ -170,6 +185,23 @@ async function downloadToFile(
             reject(new Error(`HTTP ${res.statusCode ?? "?"} downloading media`));
             return;
           }
+
+          // SECURITY: pre-check Content-Length before downloading the full body.
+          const downloadMaxBytes = resolveDownloadMaxBytes();
+          const contentLengthRaw = res.headers["content-length"];
+          if (contentLengthRaw) {
+            const contentLength = Number.parseInt(contentLengthRaw, 10);
+            if (Number.isFinite(contentLength) && contentLength > downloadMaxBytes) {
+              req.destroy();
+              reject(
+                new Error(
+                  `Download aborted: Content-Length ${contentLength} exceeds ${downloadMaxBytes} byte limit`,
+                ),
+              );
+              return;
+            }
+          }
+
           let total = 0;
           const sniffChunks: Buffer[] = [];
           let sniffLen = 0;

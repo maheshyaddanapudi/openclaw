@@ -38,6 +38,7 @@ import {
   startAcpSpawnParentStreamRelay,
 } from "./acp-spawn-parent-stream.js";
 import { resolveSandboxRuntimeStatus } from "./sandbox/runtime-status.js";
+import { getSubagentDepthFromSessionStore } from "./subagent-depth.js";
 
 export const ACP_SPAWN_MODES = ["run", "session"] as const;
 export type SpawnAcpMode = (typeof ACP_SPAWN_MODES)[number];
@@ -45,6 +46,9 @@ export const ACP_SPAWN_SANDBOX_MODES = ["inherit", "require"] as const;
 export type SpawnAcpSandboxMode = (typeof ACP_SPAWN_SANDBOX_MODES)[number];
 export const ACP_SPAWN_STREAM_TARGETS = ["parent"] as const;
 export type SpawnAcpStreamTarget = (typeof ACP_SPAWN_STREAM_TARGETS)[number];
+
+/** Hard ceiling for ACP spawn nesting depth to prevent stack overflow. */
+const MAX_ACP_SPAWN_DEPTH = 10;
 
 export type SpawnAcpParams = {
   task: string;
@@ -268,6 +272,15 @@ export async function spawnAcpDirect(
       status: "forbidden",
       error:
         'sessions_spawn sandbox="require" is unsupported for runtime="acp" because ACP sessions run outside the sandbox. Use runtime="subagent" or sandbox="inherit".',
+    };
+  }
+
+  // Enforce depth limit to prevent deeply nested ACP spawns.
+  const callerDepth = getSubagentDepthFromSessionStore(ctx.agentSessionKey, { cfg });
+  if (callerDepth >= MAX_ACP_SPAWN_DEPTH) {
+    return {
+      status: "forbidden",
+      error: `ACP spawn depth limit exceeded (current depth: ${callerDepth}, max: ${MAX_ACP_SPAWN_DEPTH})`,
     };
   }
 

@@ -43,7 +43,7 @@ export async function sendMessage(
   incomingUrl: string,
   text: string,
   userId?: string | number,
-  allowInsecureSsl = true,
+  allowInsecureSsl = false,
 ): Promise<boolean> {
   // Synology Chat API requires user_ids (numeric) to specify the recipient
   // The @mention is optional but user_ids is mandatory
@@ -93,7 +93,7 @@ export async function sendFileUrl(
   incomingUrl: string,
   fileUrl: string,
   userId?: string | number,
-  allowInsecureSsl = true,
+  allowInsecureSsl = false,
 ): Promise<boolean> {
   const payloadObj: Record<string, any> = { file_url: fileUrl };
   if (userId) {
@@ -123,7 +123,7 @@ export async function sendFileUrl(
  */
 export async function fetchChatUsers(
   incomingUrl: string,
-  allowInsecureSsl = true,
+  allowInsecureSsl = false,
   log?: { warn: (...args: unknown[]) => void },
 ): Promise<ChatUser[]> {
   const now = Date.now();
@@ -198,7 +198,7 @@ export async function fetchChatUsers(
 export async function resolveChatUserId(
   incomingUrl: string,
   webhookUsername: string,
-  allowInsecureSsl = true,
+  allowInsecureSsl = false,
   log?: { warn: (...args: unknown[]) => void },
 ): Promise<number | undefined> {
   const users = await fetchChatUsers(incomingUrl, allowInsecureSsl, log);
@@ -215,7 +215,7 @@ export async function resolveChatUserId(
   return undefined;
 }
 
-function doPost(url: string, body: string, allowInsecureSsl = true): Promise<boolean> {
+function doPost(url: string, body: string, allowInsecureSsl = false): Promise<boolean> {
   return new Promise((resolve, reject) => {
     let parsedUrl: URL;
     try {
@@ -235,8 +235,8 @@ function doPost(url: string, body: string, allowInsecureSsl = true): Promise<boo
           "Content-Length": Buffer.byteLength(body),
         },
         timeout: 30_000,
-        // Synology NAS may use self-signed certs on local network.
-        // Set allowInsecureSsl: true in channel config to skip verification.
+        // TLS verification is enabled by default. Synology NAS with self-signed
+        // certs can set allowInsecureSsl: true in channel config to skip verification.
         rejectUnauthorized: !allowInsecureSsl,
       },
       (res) => {

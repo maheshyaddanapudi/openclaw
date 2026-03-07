@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import type { IncomingMessage } from "node:http";
 import type { WebSocket, WebSocketServer } from "ws";
 import { resolveCanvasHostUrl } from "../../infra/canvas-host-url.js";
 import { removeRemoteNodeInfo } from "../../infra/skills-remote.js";
@@ -25,6 +26,18 @@ type SubsystemLogger = ReturnType<typeof createSubsystemLogger>;
 
 const LOG_HEADER_MAX_LEN = 300;
 const LOG_HEADER_FORMAT_REGEX = /\p{Cf}/gu;
+
+/**
+ * Headers that must never be logged or forwarded to downstream handlers
+ * as log context, even in sanitized form.
+ */
+const SENSITIVE_HEADER_NAMES = new Set([
+  "authorization",
+  "cookie",
+  "set-cookie",
+  "proxy-authorization",
+  "x-api-key",
+]);
 
 function replaceControlChars(value: string): string {
   let cleaned = "";
@@ -57,6 +70,19 @@ const sanitizeLogValue = (value: string | undefined): string | undefined => {
   }
   return truncateUtf16Safe(cleaned, LOG_HEADER_MAX_LEN);
 };
+
+/**
+ * Strip sensitive headers (Authorization, Cookie, etc.) from the
+ * upgrade request so they cannot leak into downstream log statements
+ * or structured metadata.
+ */
+function stripSensitiveHeaders(req: IncomingMessage): void {
+  for (const name of SENSITIVE_HEADER_NAMES) {
+    if (name in req.headers) {
+      delete req.headers[name];
+    }
+  }
+}
 
 export type GatewayWsSharedHandlerParams = {
   wss: WebSocketServer;
@@ -113,6 +139,10 @@ export function attachGatewayWsConnectionHandler(params: AttachGatewayWsConnecti
   const originCheckMetrics: WsOriginCheckMetrics = { hostHeaderFallbackAccepted: 0 };
 
   wss.on("connection", (socket, upgradeReq) => {
+    // Remove sensitive headers early so they cannot leak into any
+    // downstream log statement or structured metadata object.
+    stripSensitiveHeaders(upgradeReq);
+
     let client: GatewayWsClient | null = null;
     let closed = false;
     const openedAt = Date.now();

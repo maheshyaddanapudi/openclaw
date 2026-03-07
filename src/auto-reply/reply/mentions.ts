@@ -2,6 +2,7 @@ import { resolveAgentConfig } from "../../agents/agent-scope.js";
 import { getChannelDock } from "../../channels/dock.js";
 import { normalizeChannelId } from "../../channels/plugins/index.js";
 import type { OpenClawConfig } from "../../config/config.js";
+import { compileSafeRegex } from "../../security/safe-regex.js";
 import { escapeRegExp } from "../../utils.js";
 import type { MsgContext } from "../templating.js";
 
@@ -64,14 +65,9 @@ export function buildMentionRegexes(cfg: OpenClawConfig | undefined, agentId?: s
   if (cached) {
     return [...cached];
   }
+  // Use compileSafeRegex to reject patterns with nested repetition (ReDoS).
   const compiled = patterns
-    .map((pattern) => {
-      try {
-        return new RegExp(pattern, "i");
-      } catch {
-        return null;
-      }
-    })
+    .map((pattern) => compileSafeRegex(pattern, "i"))
     .filter((value): value is RegExp => Boolean(value));
   mentionRegexCompileCache.set(cacheKey, compiled);
   if (mentionRegexCompileCache.size > MAX_MENTION_REGEX_COMPILE_CACHE_KEYS) {
@@ -158,11 +154,10 @@ export function stripMentions(
     ...(providerMentions?.stripPatterns?.({ ctx, cfg, agentId }) ?? []),
   ]);
   for (const p of patterns) {
-    try {
-      const re = new RegExp(p, "gi");
+    // Use compileSafeRegex to reject patterns with nested repetition (ReDoS).
+    const re = compileSafeRegex(p, "gi");
+    if (re) {
       result = result.replace(re, " ");
-    } catch {
-      // ignore invalid regex
     }
   }
   if (providerMentions?.stripMentions) {

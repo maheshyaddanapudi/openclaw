@@ -1,6 +1,6 @@
 import type { RuntimeEnv, ReplyPayload, OpenClawConfig } from "openclaw/plugin-sdk/tlon";
 import { createLoggerBackedRuntime, createReplyPrefixOptions } from "openclaw/plugin-sdk/tlon";
-import { getTlonRuntime } from "../runtime.js";
+import { getTlonRuntime, isValidShipName } from "../runtime.js";
 import { createSettingsManager, type TlonSettingsStore } from "../settings.js";
 import { normalizeShip, parseChannelNest } from "../targets.js";
 import { resolveTlonAccount } from "../types.js";
@@ -772,6 +772,11 @@ export async function monitorTlonProvider(opts: MonitorTlonOpts = {}): Promise<v
 
       case "unblock": {
         const shipToUnblock = command.ship;
+        // Validate ship name against strict allowlist before passing to API
+        if (!isValidShipName(shipToUnblock)) {
+          await sendOwnerNotification("Invalid ship name.");
+          return true;
+        }
         const isBlocked = await isShipBlocked(shipToUnblock);
         if (!isBlocked) {
           await sendOwnerNotification(`${shipToUnblock} is not blocked.`);

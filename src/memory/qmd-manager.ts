@@ -87,17 +87,6 @@ function resolveSpawnInvocation(params: {
   return materializeWindowsSpawnProgram(program, params.args);
 }
 
-function isWindowsCmdSpawnEinval(err: unknown, command: string): boolean {
-  if (process.platform !== "win32") {
-    return false;
-  }
-  const errno = err as NodeJS.ErrnoException | undefined;
-  if (errno?.code !== "EINVAL") {
-    return false;
-  }
-  return /(^|[\\/])mcporter\.cmd$/i.test(command);
-}
-
 function hasHanScript(value: string): boolean {
   return HAN_SCRIPT_RE.test(value);
 }
@@ -1408,22 +1397,9 @@ export class QmdMemoryManager implements MemorySearchManager {
       env: this.env,
       packageName: "mcporter",
     });
-    try {
-      return await runWithInvocation(primaryInvocation);
-    } catch (err) {
-      if (!isWindowsCmdSpawnEinval(err, primaryInvocation.command)) {
-        throw err;
-      }
-      // Some Windows npm cmd shims can still throw EINVAL on spawn; retry through
-      // shell command resolution so PATH/PATHEXT can select a runnable entrypoint.
-      log.warn("mcporter.cmd spawn returned EINVAL on Windows; retrying with bare mcporter");
-      return await runWithInvocation({
-        command: "mcporter",
-        argv: args,
-        shell: true,
-        windowsHide: true,
-      });
-    }
+    // Security: never use shell: true for subprocess spawning -- it enables
+    // command injection when arguments contain user-influenced values.
+    return await runWithInvocation(primaryInvocation);
   }
 
   private async runQmdSearchViaMcporter(params: {

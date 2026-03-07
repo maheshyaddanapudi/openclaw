@@ -12,6 +12,8 @@ export type CachedCopilotToken = {
   updatedAt: number;
 };
 
+// SECURITY: accepted risk — TOCTOU between file existence check and read.
+// Impact is limited to cache miss.
 function resolveCopilotTokenCachePath(env: NodeJS.ProcessEnv = process.env) {
   return path.join(resolveStateDir(env), "credentials", "github-copilot.token.json");
 }
@@ -54,6 +56,22 @@ function parseCopilotTokenResponse(value: unknown): {
 
 export const DEFAULT_COPILOT_API_BASE_URL = "https://api.individual.githubcopilot.com";
 
+/**
+ * Known safe hostname patterns for GitHub Copilot API endpoints.
+ * The proxy-ep field in the Copilot token can specify alternate hosts;
+ * restrict to known GitHub-owned domains to prevent SSRF via manipulated
+ * API responses.
+ */
+const COPILOT_ALLOWED_HOSTNAME_PATTERNS = [
+  /^[a-z0-9-]+\.githubcopilot\.com$/i,
+  /^[a-z0-9-]+\.github\.com$/i,
+  /^api\.github\.com$/i,
+];
+
+function isCopilotHostnameAllowed(hostname: string): boolean {
+  return COPILOT_ALLOWED_HOSTNAME_PATTERNS.some((pattern) => pattern.test(hostname));
+}
+
 export function deriveCopilotApiBaseUrlFromToken(token: string): string | null {
   const trimmed = token.trim();
   if (!trimmed) {
@@ -72,6 +90,13 @@ export function deriveCopilotApiBaseUrlFromToken(token: string): string | null {
   // (see upstream getGitHubCopilotBaseUrl).
   const host = proxyEp.replace(/^https?:\/\//, "").replace(/^proxy\./i, "api.");
   if (!host) {
+    return null;
+  }
+
+  // SECURITY: Validate that the derived hostname belongs to a known GitHub
+  // Copilot domain. A malicious or manipulated token response could otherwise
+  // redirect API traffic to an attacker-controlled server (SSRF).
+  if (!isCopilotHostnameAllowed(host)) {
     return null;
   }
 
@@ -126,6 +151,8 @@ export async function resolveCopilotApiToken(params: {
     expiresAt: json.expiresAt,
     updatedAt: Date.now(),
   };
+  // SECURITY: accepted risk — plaintext token cache at ~/.openclaw/credentials/.
+  // File permissions should be 0o600. Token is short-lived (typically ~30 min).
   saveJsonFileFn(cachePath, payload);
 
   return {

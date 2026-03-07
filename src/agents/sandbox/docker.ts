@@ -69,9 +69,13 @@ export function execDockerRaw(
 ): Promise<ExecDockerRawResult> {
   return new Promise<ExecDockerRawResult>((resolve, reject) => {
     const spawnInvocation = resolveDockerSpawnInvocation(args);
+    // Security: never spawn docker through a shell. Shell mode enables command
+    // injection when arguments contain user- or LLM-controlled values (e.g.
+    // container names, labels, environment variables). Docker args are passed
+    // as an argv array, which is safe without shell interpretation.
     const child = spawn(spawnInvocation.command, spawnInvocation.args, {
       stdio: ["pipe", "pipe", "pipe"],
-      shell: spawnInvocation.shell,
+      shell: false,
       windowsHide: spawnInvocation.windowsHide,
     });
     const stdoutChunks: Buffer[] = [];

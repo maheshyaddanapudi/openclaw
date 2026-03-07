@@ -457,11 +457,33 @@ describe("isSecureWebSocketUrl", () => {
       "ws://169.254.10.20:18789",
       "ws://[fc00::1]:18789",
       "ws://[fe80::1]:18789",
-      "ws://gateway.private.example:18789",
     ];
 
     for (const input of allowedWhenOptedIn) {
       expect(isSecureWebSocketUrl(input, { allowPrivateWs: true }), input).toBe(true);
+    }
+  });
+
+  it("rejects ws:// to non-private hostnames even with allowPrivateWs", () => {
+    const attackerUrls = [
+      "ws://attacker.com/ws",
+      "ws://evil.example.org:18789/path",
+      "ws://my-tailnet-host.ts.net:18789",
+    ];
+    for (const url of attackerUrls) {
+      expect(isSecureWebSocketUrl(url, { allowPrivateWs: true }), url).toBe(false);
+    }
+  });
+
+  it("allows ws:// to private IPs with allowPrivateWs", () => {
+    const privateUrls = [
+      "ws://192.168.1.1:18789/ws",
+      "ws://10.0.0.1:18789",
+      "ws://172.16.0.1:18789",
+      "ws://[fd12:3456::1]:18789",
+    ];
+    for (const url of privateUrls) {
+      expect(isSecureWebSocketUrl(url, { allowPrivateWs: true }), url).toBe(true);
     }
   });
 

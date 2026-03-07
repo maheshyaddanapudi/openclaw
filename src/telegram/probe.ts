@@ -1,3 +1,4 @@
+// SECURITY: accepted risk — probe reveals bot existence but no sensitive data.
 import type { BaseProbeResult } from "../channels/plugins/types.js";
 import { fetchWithTimeout } from "../utils/fetch-timeout.js";
 import { makeProxyFetch } from "./proxy.js";

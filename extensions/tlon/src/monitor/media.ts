@@ -1,15 +1,19 @@
 import { randomUUID } from "node:crypto";
-import { createWriteStream } from "node:fs";
+import { createWriteStream, readFileSync } from "node:fs";
 import { mkdir } from "node:fs/promises";
 import { homedir } from "node:os";
 import * as path from "node:path";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
+import { detectMime } from "openclaw/plugin-sdk";
 import { fetchWithSsrFGuard } from "openclaw/plugin-sdk/tlon";
 import { getDefaultSsrFPolicy } from "../urbit/context.js";
 
 // Default to OpenClaw workspace media directory
 const DEFAULT_MEDIA_DIR = path.join(homedir(), ".openclaw", "workspace", "media", "inbound");
+
+// Maximum bytes to read for MIME sniffing (file-type typically needs ~4100 bytes)
+const MIME_SNIFF_BYTES = 8192;
 
 export interface ExtractedImage {
   url: string;
@@ -79,9 +83,10 @@ export async function downloadMedia(
         return null;
       }
 
-      // Determine content type and extension
-      const contentType = response.headers.get("content-type") || "application/octet-stream";
-      const ext = getExtensionFromContentType(contentType) || getExtensionFromUrl(url) || "bin";
+      // Determine content type from header
+      const headerContentType = response.headers.get("content-type") || "application/octet-stream";
+      const ext =
+        getExtensionFromContentType(headerContentType) || getExtensionFromUrl(url) || "bin";
 
       // Generate unique filename
       const filename = `${randomUUID()}.${ext}`;
@@ -97,6 +102,16 @@ export async function downloadMedia(
       const writeStream = createWriteStream(localPath);
       await pipeline(Readable.fromWeb(body as any), writeStream);
 
+      // Validate MIME type by sniffing file content (not just trusting headers).
+      // detectMime prioritises magic-byte sniffing over header values.
+      const sniffBuffer = readFirstBytes(localPath, MIME_SNIFF_BYTES);
+      const verifiedMime = await detectMime({
+        buffer: sniffBuffer ?? undefined,
+        headerMime: headerContentType,
+        filePath: url,
+      });
+      const contentType = verifiedMime ?? headerContentType;
+
       return {
         localPath,
         contentType,
@@ -105,8 +120,22 @@ export async function downloadMedia(
     } finally {
       await release();
     }
-  } catch (error: any) {
-    console.error(`[tlon-media] Error downloading ${url}: ${error?.message ?? String(error)}`);
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error(`[tlon-media] Error downloading ${url}: ${msg}`);
+    return null;
+  }
+}
+
+/**
+ * Read the first N bytes of a file for MIME sniffing.
+ * Returns null if the file cannot be read.
+ */
+function readFirstBytes(filePath: string, maxBytes: number): Buffer | null {
+  try {
+    const buf = readFileSync(filePath);
+    return buf.subarray(0, maxBytes);
+  } catch {
     return null;
   }
 }

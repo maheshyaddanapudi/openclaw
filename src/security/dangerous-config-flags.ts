@@ -24,5 +24,8 @@ export function collectEnabledInsecureOrDangerousFlags(cfg: OpenClawConfig): str
   if (cfg.tools?.exec?.applyPatch?.workspaceOnly === false) {
     enabledFlags.push("tools.exec.applyPatch.workspaceOnly=false");
   }
+  if (cfg.gateway?.auth?.mode === "none") {
+    enabledFlags.push("gateway.auth.mode=none");
+  }
   return enabledFlags;
 }

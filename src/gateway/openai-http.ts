@@ -107,11 +107,22 @@ function writeSse(res: ServerResponse, data: unknown) {
   res.write(`data: ${JSON.stringify(data)}\n\n`);
 }
 
+/**
+ * Resolve whether the HTTP API caller should be treated as owner.
+ * Authenticated callers (token/password auth) are considered owners.
+ * When gateway auth mode is "none", the caller has no verified identity
+ * and is not treated as owner.
+ */
+function resolveSenderIsOwner(auth: ResolvedGatewayAuth): boolean {
+  return auth.mode !== "none";
+}
+
 function buildAgentCommandInput(params: {
   prompt: { message: string; extraSystemPrompt?: string; images?: ImageContent[] };
   sessionKey: string;
   runId: string;
   messageChannel: string;
+  senderIsOwner: boolean;
 }) {
   return {
     message: params.prompt.message,
@@ -122,8 +133,7 @@ function buildAgentCommandInput(params: {
     deliver: false as const,
     messageChannel: params.messageChannel,
     bestEffortDeliver: false as const,
-    // HTTP API callers are authenticated operator clients for this gateway context.
-    senderIsOwner: true as const,
+    senderIsOwner: params.senderIsOwner,
   };
 }
 
@@ -474,6 +484,7 @@ export async function handleOpenAiHttpRequest(
 
   const runId = `chatcmpl_${randomUUID()}`;
   const deps = createDefaultDeps();
+  const senderIsOwner = resolveSenderIsOwner(opts.auth);
   const commandInput = buildAgentCommandInput({
     prompt: {
       message: prompt.message,
@@ -483,6 +494,7 @@ export async function handleOpenAiHttpRequest(
     sessionKey,
     runId,
     messageChannel,
+    senderIsOwner,
   });
 
   if (!stream) {

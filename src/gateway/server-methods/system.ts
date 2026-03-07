@@ -2,10 +2,30 @@ import { resolveMainSessionKeyFromConfig } from "../../config/sessions.js";
 import { getLastHeartbeatEvent } from "../../infra/heartbeat-events.js";
 import { setHeartbeatsEnabled } from "../../infra/heartbeat-runner.js";
 import { enqueueSystemEvent, isSystemEventContextChanged } from "../../infra/system-events.js";
-import { listSystemPresence, updateSystemPresence } from "../../infra/system-presence.js";
+import {
+  listSystemPresence,
+  updateSystemPresence,
+  type SystemPresence,
+} from "../../infra/system-presence.js";
+import { sanitizeTerminalText } from "../../terminal/safe-text.js";
+import { shortenHomeInString } from "../../utils.js";
 import { ErrorCodes, errorShape } from "../protocol/index.js";
 import { broadcastPresenceSnapshot } from "../server/presence-events.js";
 import type { GatewayRequestHandlers } from "./types.js";
+
+/**
+ * Strip filesystem paths (home directory) from presence entries before
+ * returning them to clients so the full server filesystem layout is not
+ * disclosed.  Only the `text` field is likely to embed paths; host/ip
+ * are kept as-is since they are network-level identifiers already
+ * exposed through the gateway URL.
+ */
+function stripPathsFromPresence(entries: SystemPresence[]): SystemPresence[] {
+  return entries.map((entry) => ({
+    ...entry,
+    text: shortenHomeInString(entry.text),
+  }));
+}
 
 export const systemHandlers: GatewayRequestHandlers = {
   "last-heartbeat": ({ respond }) => {
@@ -29,7 +49,7 @@ export const systemHandlers: GatewayRequestHandlers = {
   },
   "system-presence": ({ respond }) => {
     const presence = listSystemPresence();
-    respond(true, presence, undefined);
+    respond(true, stripPathsFromPresence(presence), undefined);
   },
   "system-event": ({ params, respond, context }) => {
     const text = typeof params.text === "string" ? params.text.trim() : "";
@@ -40,8 +60,10 @@ export const systemHandlers: GatewayRequestHandlers = {
     const sessionKey = resolveMainSessionKeyFromConfig();
     const deviceId = typeof params.deviceId === "string" ? params.deviceId : undefined;
     const instanceId = typeof params.instanceId === "string" ? params.instanceId : undefined;
-    const host = typeof params.host === "string" ? params.host : undefined;
-    const ip = typeof params.ip === "string" ? params.ip : undefined;
+    const host =
+      typeof params.host === "string" ? sanitizeTerminalText(params.host).slice(0, 256) : undefined;
+    const ip =
+      typeof params.ip === "string" ? sanitizeTerminalText(params.ip).slice(0, 128) : undefined;
     const mode = typeof params.mode === "string" ? params.mode : undefined;
     const version = typeof params.version === "string" ? params.version : undefined;
     const platform = typeof params.platform === "string" ? params.platform : undefined;

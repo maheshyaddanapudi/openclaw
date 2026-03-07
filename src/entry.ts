@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+// SECURITY: Node.js version enforcement. Keep Node >=22.12.0 for security patches.
+// See release notes for CVE coverage.
 import { spawn } from "node:child_process";
 import { enableCompileCache } from "node:module";
 import process from "node:process";
