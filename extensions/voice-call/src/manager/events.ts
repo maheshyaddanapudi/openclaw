@@ -13,6 +13,17 @@ import {
   startMaxDurationTimer,
 } from "./timers.js";
 
+/** SEC-R7-LOW-1: Redact phone numbers in log output to avoid PII leakage. */
+function redactPhone(value: string | undefined): string {
+  if (!value) {
+    return "<unknown>";
+  }
+  if (value.length <= 4) {
+    return "***";
+  }
+  return `***${value.slice(-4)}`;
+}
+
 type EventContext = Pick<
   CallManagerContext,
   | "activeCalls"
@@ -49,7 +60,7 @@ function shouldAcceptInbound(config: EventContext["config"], from: string | unde
       const allowed = isAllowlistedCaller(normalized, allowFrom);
       const status = allowed ? "accepted" : "rejected";
       console.log(
-        `[voice-call] Inbound call ${status}: ${from} ${allowed ? "is in" : "not in"} allowlist`,
+        `[voice-call] Inbound call ${status}: ${redactPhone(from)} ${allowed ? "is in" : "not in"} allowlist`,
       );
       return allowed;
     }
@@ -92,7 +103,7 @@ function createWebhookCall(params: {
   persistCallRecord(params.ctx.storePath, callRecord);
 
   console.log(
-    `[voice-call] Created ${params.direction} call record: ${callId} from ${params.from}`,
+    `[voice-call] Created ${params.direction} call record: ${callId} from ${redactPhone(params.from)}`,
   );
   return callRecord;
 }
@@ -124,7 +135,7 @@ export function processEvent(ctx: EventContext, event: NormalizedEvent): void {
       const pid = providerCallId;
       if (!ctx.provider) {
         console.warn(
-          `[voice-call] Inbound call rejected by policy but no provider to hang up (providerCallId: ${pid}, from: ${event.from}); call will time out on provider side.`,
+          `[voice-call] Inbound call rejected by policy but no provider to hang up (providerCallId: ${pid}, from: ${redactPhone(event.from)}); call will time out on provider side.`,
         );
         return;
       }

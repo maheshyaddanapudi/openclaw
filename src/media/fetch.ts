@@ -60,6 +60,10 @@ function parseContentDispositionFileName(header?: string | null): string | undef
   return undefined;
 }
 
+/** Patterns that indicate the error body may contain sensitive data. */
+const SENSITIVE_BODY_PATTERN =
+  /api[_-]?key|token|secret|password|credential|authorization|bearer|session[_-]?id/i;
+
 async function readErrorBodySnippet(res: Response, maxChars = 200): Promise<string | undefined> {
   try {
     const text = await res.text();
@@ -69,6 +73,11 @@ async function readErrorBodySnippet(res: Response, maxChars = 200): Promise<stri
     const collapsed = text.replace(/\s+/g, " ").trim();
     if (!collapsed) {
       return undefined;
+    }
+    // SEC-R6-LOW-4: Suppress snippets that may contain secrets or credentials
+    // leaked by upstream servers in error responses.
+    if (SENSITIVE_BODY_PATTERN.test(collapsed)) {
+      return "[redacted — may contain credentials]";
     }
     if (collapsed.length <= maxChars) {
       return collapsed;

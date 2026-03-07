@@ -125,7 +125,8 @@ export async function buildSessionEntry(absPath: string): Promise<SessionFileEnt
       lineMap,
     };
   } catch (err) {
-    log.debug(`Failed reading session file ${absPath}: ${String(err)}`);
+    // SEC-R8-LOW-3: Log only the basename to avoid leaking home directory paths
+    log.debug(`Failed reading session file ${path.basename(absPath)}: ${String(err)}`);
     return null;
   }
 }

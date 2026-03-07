@@ -59,8 +59,11 @@ export const twitchPlugin: ChannelPlugin<TwitchAccountConfig> = {
     normalizeAllowEntry: (entry) => entry.replace(/^(twitch:)?user:?/i, ""),
     notifyApproval: async ({ id }) => {
       // Note: Twitch doesn't support DMs from bots, so pairing approval is limited
-      // We'll log the approval instead
-      console.warn(`Pairing approved for user ${id} (notification sent via chat if possible)`);
+      // SEC-R7-LOW-2: Redact user ID to avoid PII leakage in logs
+      const redacted = id && id.length > 4 ? `***${id.slice(-4)}` : "***";
+      console.warn(
+        `Pairing approved for user ${redacted} (notification sent via chat if possible)`,
+      );
     },
   },
 

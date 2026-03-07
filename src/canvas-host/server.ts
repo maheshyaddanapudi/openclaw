@@ -122,11 +122,18 @@ function defaultIndexHTML() {
         typeof window.openclawCanvasA2UIAction.postMessage === "function")
     );
   const hasHelper = () => typeof window.openclawSendUserAction === "function";
-  statusEl.innerHTML =
-    "Bridge: " +
-    (hasHelper() ? "<span class='ok'>ready</span>" : "<span class='bad'>missing</span>") +
-    " · iOS=" + (hasIOS() ? "yes" : "no") +
-    " · Android=" + (hasAndroid() ? "yes" : "no");
+  // SEC-R8-LOW-1: Use safe DOM construction instead of innerHTML
+  statusEl.textContent = "";
+  const bridgeLabel = document.createTextNode("Bridge: ");
+  statusEl.appendChild(bridgeLabel);
+  const bridgeStatus = document.createElement("span");
+  bridgeStatus.className = hasHelper() ? "ok" : "bad";
+  bridgeStatus.textContent = hasHelper() ? "ready" : "missing";
+  statusEl.appendChild(bridgeStatus);
+  statusEl.appendChild(document.createTextNode(
+    " \u00b7 iOS=" + (hasIOS() ? "yes" : "no") +
+    " \u00b7 Android=" + (hasAndroid() ? "yes" : "no")
+  ));
 
   const onStatus = (ev) => {
     const d = ev && ev.detail || {};

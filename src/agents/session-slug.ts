@@ -100,8 +100,14 @@ const SLUG_NOUNS = [
   "zephyr",
 ];
 
+function secureRandomIndex(max: number): number {
+  const array = new Uint32Array(1);
+  crypto.getRandomValues(array);
+  return array[0] % max;
+}
+
 function randomChoice(values: string[], fallback: string) {
-  return values[Math.floor(Math.random() * values.length)] ?? fallback;
+  return values[secureRandomIndex(values.length)] ?? fallback;
 }
 
 function createSlugBase(words = 2) {
@@ -138,6 +144,10 @@ export function createSessionSlug(isTaken?: (id: string) => boolean): string {
       }
     }
   }
-  const fallback = `${createSlugBase(3)}-${Math.random().toString(36).slice(2, 5)}`;
+  const randomSuffix = Array.from(crypto.getRandomValues(new Uint8Array(3)))
+    .map((b) => b.toString(36))
+    .join("")
+    .slice(0, 5);
+  const fallback = `${createSlugBase(3)}-${randomSuffix}`;
   return isIdTaken(fallback) ? `${fallback}-${Date.now().toString(36)}` : fallback;
 }
