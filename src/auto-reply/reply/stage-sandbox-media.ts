@@ -304,6 +304,9 @@ async function scpFile(remoteHost: string, remotePath: string, localPath: string
   if (!SAFE_REMOTE_PATH_RE.test(remotePath)) {
     throw new Error("remote path contains unsafe characters");
   }
+  if (remotePath.includes("..")) {
+    throw new Error("remote path contains path traversal sequence");
+  }
   return new Promise((resolve, reject) => {
     const child = spawn(
       "/usr/bin/scp",

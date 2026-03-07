@@ -227,11 +227,9 @@ describe("browser config", () => {
     });
   });
 
-  it("defaults browser SSRF policy to trusted-network mode", () => {
+  it("defaults browser SSRF policy to strict mode (no private network)", () => {
     const resolved = resolveBrowserConfig({});
-    expect(resolved.ssrfPolicy).toEqual({
-      dangerouslyAllowPrivateNetwork: true,
-    });
+    expect(resolved.ssrfPolicy).toBeUndefined();
   });
 
   it("supports explicit strict mode by disabling private network access", () => {
