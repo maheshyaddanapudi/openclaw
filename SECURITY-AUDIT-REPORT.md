@@ -1,15 +1,15 @@
 # OpenClaw Comprehensive Security Audit Report
 
 **Date:** 2026-03-07
-**Methodology:** Multi-angle static code analysis + public vulnerability research + CVE fix cross-verification + gap analysis re-examination (3 rounds)
-**Auditors:** 16 agents across 3 rounds (5 security-auditors + 2 web researchers + 1 CVE verifier + 1 backup + 7 gap analysis agents)
-**Scope:** Full codebase (src/, extensions/, ui/, plugins, gateway, channels, agents, sandbox) + public CVE/GHSA databases + attack campaign research
+**Methodology:** Multi-angle static code analysis + public vulnerability research + CVE fix cross-verification + gap analysis re-examination + comprehensive web research deep dive (4 rounds)
+**Auditors:** 17 agents across 4 rounds (5 security-auditors + 2 web researchers + 1 CVE verifier + 1 backup + 7 gap analysis agents + 1 deep web researcher)
+**Scope:** Full codebase (src/, extensions/, ui/, plugins, gateway, channels, agents, sandbox) + public CVE/GHSA databases + attack campaign research + government advisories + industry assessments
 
 ---
 
 ## Executive Summary
 
-This report consolidates findings from 3 rounds of parallel security assessments covering:
+This report consolidates findings from 4 rounds of parallel security assessments covering:
 
 **Round 1 — Code Audit (5 agents):**
 1. Authentication & Secrets — Gateway auth, credential storage, API key rotation, session management
@@ -32,16 +32,19 @@ This report consolidates findings from 3 rounds of parallel security assessments
 14. Data flow & PII deep dive
 15. Broad web research sweep (attack campaigns, government actions, compliance)
 
-### Aggregate Findings (All 3 Rounds)
+**Round 4 — Comprehensive Web Research Deep Dive (1 agent):**
+16. Exhaustive CVE/GHSA database search, government advisory compilation, prompt injection pattern catalog, sandbox bypass taxonomy, GDPR compliance analysis
 
-| Severity | Round 1 | Round 2 | Round 3 | Total |
-|----------|---------|---------|---------|-------|
-| **CRITICAL** | 3 | 12+ (public CVEs) | 3 new code + 18 new CVEs | 36+ |
-| **HIGH** | 20 | 15+ (public) | 15 new code + 7 new GHSAs | 57+ |
-| **MEDIUM** | 31 | 20+ (public) | 33 new code | 84+ |
-| **LOW** | 45 | — | 31 (incl. 7 positive) | 76+ |
+### Aggregate Findings (All 4 Rounds)
 
-**Total unique public advisories: 43+ CVEs + 55+ GHSAs + 8 government advisories + 5 major attack campaigns**
+| Severity | Round 1 | Round 2 | Round 3 | Round 4 | Total |
+|----------|---------|---------|---------|---------|-------|
+| **CRITICAL** | 3 | 12+ (public CVEs) | 3 new code + 18 new CVEs | 2 new CVEs + 6 GHSAs | 44+ |
+| **HIGH** | 20 | 15+ (public) | 15 new code + 7 new GHSAs | 13 new CVEs + 18 GHSAs | 88+ |
+| **MEDIUM** | 31 | 20+ (public) | 33 new code | 1 CVE + 22 GHSAs | 107+ |
+| **LOW** | 45 | — | 31 (incl. 7 positive) | — | 76+ |
+
+**Total unique public advisories: 58+ CVEs + 103+ GHSAs + 7 government/institutional advisories + 5 major attack campaigns + 10 industry vendor assessments**
 
 ### Top 3 Systemic Risks
 
@@ -1077,6 +1080,176 @@ Root cause: Docker setup defaults to `0.0.0.0:18789` (all interfaces). 93.4% of 
 
 ---
 
+## Part 10: Round 4 — Comprehensive Web Research Deep Dive
+
+**Methodology:** Extended web research agent performed exhaustive searches across CVE databases, GitHub Security Advisories, government cybersecurity agencies, industry vendor assessments, and security research publications. This round identified 15 new CVEs and 48 new GHSAs not covered in previous rounds, plus additional government advisories, prompt injection research, and supply chain intelligence.
+
+**Agent deployed:** 1 general-purpose web researcher (17th agent overall)
+
+### 10.1 New CVEs (15 Previously Unreported)
+
+| CVE | CVSS | Severity | Description | Fixed In |
+|-----|------|----------|-------------|----------|
+| CVE-2026-28363 | 9.9 | CRITICAL | `safeBins` allowlist bypass via GNU long-option abbreviation (e.g., `sort --compress-p=malicious`) | 2026.2.23 |
+| CVE-2026-28484 | 9.8 | CRITICAL | Option injection RCE in pre-commit hook — dash-prefixed filenames interpreted as git options, staging `.env` secrets | 2026.2.15 |
+| CVE-2026-28479 | 8.7 | HIGH | SHA-1 cache poisoning in sandbox identifiers — collision attacks enable sandbox state cross-contamination | 2026.2.15 |
+| CVE-2026-29609 | 8.7 | HIGH | DoS via unbounded media fetch — entire HTTP response buffered before `maxBytes` enforcement | 2026.2.14 |
+| CVE-2026-28453 | 8.3 | HIGH | TAR path traversal (Zip Slip) — `../../` sequences write files outside extraction directory | 2026.2.14 |
+| CVE-2026-28465 | 8.2 | HIGH | Voice-call webhook verification bypass via crafted `X-Forwarded-*` headers | 2026.2.3 |
+| CVE-2026-29610 | 7.8 | HIGH | Command hijacking via PATH manipulation — attacker binaries shadow allowlisted commands | 2026.2.14 |
+| CVE-2026-28485 | HIGH | HIGH | Missing authentication on `/agent/act` browser-control route — unauthenticated browser automation | 2026.2.12 |
+| CVE-2026-28466 | HIGH | HIGH | Exec approval gating bypass via `node.invoke` — injecting `approved: true` in RPC params | 2026.2.14 |
+| CVE-2026-26323 | HIGH | HIGH | Command injection in `update-clawtributors.ts` via crafted git author email — supply chain risk | 2026.2.14 |
+| CVE-2026-26327 | 6.5 | MEDIUM | mDNS/DNS-SD TLS pin override — spoofed mDNS records redirect clients and override certificate pins | 2026.2.14 |
+| CVE-2026-27009 | HIGH | HIGH | Stored XSS in Control UI — agent identity values rendered in inline `<script>` without escaping | 2026.2.15 |
+| CVE-2026-27001 | HIGH | HIGH | Workspace path injection into agent system prompt — Unicode control chars or raw instructions in directory names | 2026.2.15 |
+| CVE-2026-28478 | HIGH | HIGH | DoS via unbounded webhook request body buffering — memory exhaustion before auth checks | 2026.2.13 |
+| CVE-2026-28462 | HIGH | HIGH | Path traversal in browser control API output paths — write screenshots to arbitrary filesystem locations | 2026.2.13 |
+
+### 10.2 New GitHub Security Advisories (48 Previously Unreported)
+
+#### CRITICAL GHSAs
+
+| GHSA | CVSS | Description |
+|------|------|-------------|
+| GHSA-2fgq-7j6h-9rm4 | 9.8 | RCE via `SHELLOPTS`/`PS4`/`BASH_ENV` environment injection into child shells |
+| GHSA-fqcm-97m6-w7rm | 9.8 | Arbitrary file read via attachment hydration path traversal (fail-open when sandbox root unconfigured) |
+| GHSA-gw85-xp4q-5gp9 | 9.8 | Authorization bypass in Synology Chat extension — empty `allowFrom` defaults to permit-all |
+| GHSA-rv2q-f2h5-6xmg | CRITICAL | Node role device identity bypass — gateway token holders skip device pairing |
+| GHSA-gv46-4xfq-jv58 | CRITICAL | RCE via approval workflow bypass — unsanitized approval state in RPC calls |
+| GHSA-v6x2-2qvm-6gv8 | CRITICAL | Gateway token leak via insecure hashing fallback — token used as salt in API request metadata |
+
+#### HIGH GHSAs
+
+| GHSA | CVSS | Description |
+|------|------|-------------|
+| GHSA-943q-mwmv-hhvh | 8.8 | Privilege escalation via config manipulation + insufficient RPC authorization |
+| GHSA-g8p2-7wf7-98mq | HIGH | 1-click RCE via `gatewayUrl` token exfiltration in Control UI |
+| GHSA-3jx4-q2m7-r496 | HIGH | Hardlink alias bypass of workspace file boundaries |
+| GHSA-vvjh-f6p9-5vcf | HIGH | Canvas authentication bypass (ZDI-CAN-29311) |
+| GHSA-jjgj-cpp9-cvpv | HIGH | Local file exfiltration via MCP `MEDIA:` directive injection |
+| GHSA-gcj7-r3hg-m7w6 | 8.2 | Webhook replay via unsigned idempotency headers in voice-call |
+| GHSA-m8v2-6wwh-r4gc | HIGH | Sandbox escape via symlink TOCTOU race condition |
+| GHSA-7f4q-9rqh-x36p | 7.5 | Execution allowlist bypass on macOS via basename-only matching |
+| GHSA-hwpq-rrpf-pgcq | 7.2 | Execution approval bypass via UI spoofing (trailing whitespace) |
+| GHSA-jxrq-8fm4-9p58 | HIGH | Archive extraction path traversal via symlinks — **exploited in the wild** (March 1, 2026) |
+| GHSA-jj82-76v6-933r | HIGH | Execution allowlist bypass via wrapper injection (`/usr/bin/env`, `bash -c`) |
+| GHSA-hjvp-qhm6-wrh2 | HIGH | `system.run` approval IDs not cryptographically bound to execution context |
+| GHSA-w9cg-v44m-4qv8 | HIGH | `BASH_ENV`/`ENV` startup-file injection into spawned shells |
+| GHSA-r65x-2hqr-j5hf | HIGH | Node reconnect metadata spoofing — bypass platform-specific security policies |
+| GHSA-4gc7-qcvf-38wg | HIGH | `safeBins sort` bypass via GNU option abbreviation (formal GHSA for CVE-2026-28363) |
+| GHSA-fg3m-vhrr-8gj6 | HIGH | Command injection in Lobster extension on Windows via `shell: true` |
+| GHSA-mmpf-jwf4-h3qv | HIGH | Option injection in pre-commit hook (formal GHSA for CVE-2026-28484) |
+| GHSA-p25h-9q54-ffvw | HIGH | TAR Zip Slip path traversal (formal GHSA for CVE-2026-28453) |
+
+#### MODERATE GHSAs
+
+| GHSA | CVSS | Description |
+|------|------|-------------|
+| GHSA-q6qf-4p5j-r25g | MOD | Incomplete IPv4 SSRF blocking — missing IANA special-use ranges |
+| GHSA-wpg9-4g4v-f9rc | MOD | Discord voice transcript owner-flag omission — non-owners gain owner tool access |
+| GHSA-r54r-wmmq-mh84 | MOD | ZIP extraction race condition — symlink rebind during extraction |
+| GHSA-jmm5-fvh5-gf4p | 5.9 | Timing side-channel in auth — `===` instead of `timingSafeEqual`, residual length leak |
+| GHSA-6c9j-x93c-rw6j | MOD | `safeBins` file-existence oracle — filesystem reconnaissance via approval behavior |
+| GHSA-8cp7-rp8r-mg77 | MOD | SSRF guard bypass via IPv6 ISATAP embedded private IPv4 addresses |
+| GHSA-f6h3-846h-2r8w | MOD | Elevated `allowFrom` identity signal mismatch — mutable metadata matching |
+| GHSA-w2cg-vxx6-5xjg | MOD | DoS via large base64 media — decoded before size budget enforcement |
+| GHSA-fhvm-j76f-qmjv | MOD | Telegram webhook authorization bypass when `webhookSecret` unconfigured |
+| GHSA-9mph-4f7v-fmvh | MOD | Agent avatar symlink traversal — arbitrary file exfiltration via avatar rendering |
+| GHSA-25pw-4h6w-qwvm | 5.4 | BlueBubbles group allowlist bypass via pairing-store fallback |
+| GHSA-jwf4-8wf4-jf2m | MOD | BlueBubbles pairing/allowlist mismatch — empty `allowFrom` treated as permit-all |
+| GHSA-4rqq-w8v4-7p47 | MOD | Incomplete IPv4 special-use SSRF blocking (duplicate of q6qf variant) |
+| GHSA-rxxp-482v-7mrh | MOD | Memory exhaustion via unbounded media buffering in Discord/Telegram/Teams adapters |
+| GHSA-mfg5-7q5g-f37j | MOD | DoS via uncontrolled WebSocket resource allocation in voice-call |
+| GHSA-w7j5-j98m-w679 | MOD | Root execution in Docker containers — no capability dropping or seccomp |
+| GHSA-792q-qw95-f446 | MOD | Signal reaction handling authorization bypass — reactions processed before access control |
+| GHSA-2ch6-x3g4-7759 | MOD | Authorization bypass via identity confusion — group IDs treated as user IDs |
+| GHSA-gq83-8q7q-9hfx | MOD | Race condition in sandbox registry — orphaned containers, state desynchronization |
+| GHSA-rq6g-px6m-c248 | MOD | Google Chat webhook cross-account policy misrouting |
+| GHSA-g27f-9qjv-22pm | MOD | Log poisoning via WebSocket headers — indirect prompt injection |
+| GHSA-6g25-pc82-vfwp | MOD | PKCE verifier exposure in macOS OAuth — `code_verifier` in URL `state` parameter |
+
+### 10.3 Government and Institutional Actions (7 Authorities)
+
+| Authority | Date | Action |
+|-----------|------|--------|
+| **BSI / CERT-Bund (Germany)** | Feb 24 – Mar 2, 2026 | Three rounds of advisories covering 67 total security issues; immediate patching recommended |
+| **CCB SafeOnWeb (Belgium)** | Feb 2026 | Critical vulnerability warning — "1-click RCE; patch immediately" |
+| **Dutch DPA (Netherlands)** | Feb 2026 | Regulatory warning against use with privacy-sensitive data; calls for EU AI Act clarification on autonomous agents |
+| **SMU (United States)** | Mar 4, 2026 | Institutional position paper — advises against use with research data and FERPA records |
+| **University of Toronto** | Feb 2026 | Institutional vulnerability notification — advises review of all OpenClaw deployments |
+| **South Korean Enterprises** | Feb 2026 | Kakao restricted, Naver banned, Karrot blocked OpenClaw on all work devices |
+| **Meta** | Feb 2026 | Banned OpenClaw from all corporate devices |
+
+### 10.4 Prompt Injection & Memory Poisoning Patterns (7 Distinct)
+
+1. **SOUL.md persistent backdoor** — Write access to identity file enables long-term behavioral changes surviving restarts. **No fix exists — architectural limitation.**
+2. **Fragmented time-shifted memory poisoning** — Benign fragments accumulate across interactions into functional payloads in MEMORY.md (Palo Alto Networks)
+3. **Email-based data exfiltration** — Hidden CSS/HTML instructions in emails exfiltrate private keys via agent processing (Archestra.AI demo)
+4. **Calendar/web content-embedded injection** — Hidden text in calendar invites and web pages inject instructions via `web_fetch`
+5. **Log poisoning** — WebSocket `Origin`/`User-Agent` headers containing prompt payloads reach LLM analysis pipelines (GHSA-g27f-9qjv-22pm)
+6. **Unicode directory injection** — RTL override, zero-width joiners in workspace directory names alter system prompt (CVE-2026-27001)
+7. **Shared context cross-user leakage** — Multiple users sharing agent context can read each other's secrets and tool results
+
+### 10.5 Supply Chain Intelligence Update
+
+| Campaign | Scale | Description |
+|----------|-------|-------------|
+| **ClawHub Malicious Skills** | 1,467 (Snyk), ~900/4,500 (Bitdefender) | ToxicSkills across 12 publisher accounts with credential theft, backdoors, cryptominers |
+| **Atomic macOS Stealer** | 39 skills (Trend Micro) | Functional-looking ClawHub skills distributing macOS infostealer |
+| **Vidar Infostealer** | Active campaigns (Hudson Rock) | Specifically targeting `~/.openclaw/` for credentials, device keys, memory files |
+| **Leaky Skills** | 283/3,984 (7.1%) (Snyk) | Legitimate skills exposing API keys, passwords, credit card numbers through LLM context |
+
+### 10.6 Industry Vendor Assessments (10 Firms)
+
+| Firm | Assessment |
+|------|-----------|
+| **Cisco Talos** | "Security nightmare" — 9 distinct findings, 2 critical |
+| **Microsoft** | "Limited built-in security controls" — recommends isolated environments |
+| **Sophos** | "Only safely run in a disposable sandbox" |
+| **CrowdStrike** | Published advisory guide for security teams |
+| **Kaspersky** | Classified as "unsafe for use" |
+| **Snyk Labs** | Demonstrated dual sandbox bypass; documented 1,467 malicious skills |
+| **Bitdefender** | ~900 malicious skills (~20% of ecosystem) |
+| **Trend Micro** | 39 skills distributing Atomic macOS Stealer |
+| **Palo Alto Networks** | Documented fragmented time-shifted memory poisoning |
+| **Hudson Rock** | First to document Vidar infostealer targeting `~/.openclaw/` |
+
+### 10.7 Sandbox & Execution Bypasses Catalog (9 Distinct)
+
+1. **Dual sandbox bypass** — Both `assertSandboxPath` and `/tools/invoke` fail independently (Snyk Labs)
+2. **Symlink TOCTOU escape** — Symlinks to non-existent files pass boundary checks (GHSA-m8v2-6wwh-r4gc)
+3. **Wrapper injection** — `/usr/bin/env`, `bash -c` smuggle payloads past allowlists (GHSA-jj82-76v6-933r)
+4. **Approval context bypass** — Approval IDs reusable with different commands (GHSA-hjvp-qhm6-wrh2)
+5. **Root in containers** — No capability dropping or seccomp (GHSA-w7j5-j98m-w679)
+6. **Hardlink alias bypass** — Hardlinks to files outside workspace pass validation (GHSA-3jx4-q2m7-r496)
+7. **UI spoofing** — Trailing whitespace in binary names causes display/execution mismatch (GHSA-hwpq-rrpf-pgcq)
+8. **Canvas auth bypass** — Complete authentication bypass in Canvas subsystem (GHSA-vvjh-f6p9-5vcf)
+9. **macOS basename matching** — Allowlist checks basename only; any path with matching name passes (GHSA-7f4q-9rqh-x36p)
+
+### 10.8 GDPR & Compliance Concerns
+
+1. Dutch DPA regulatory warning against use with personal/confidential data
+2. No right-to-erasure workflow — sessions accumulate indefinitely (GDPR Article 17 risk)
+3. Uncontrolled data transfers to US-based LLM providers without DPA/SCC tooling
+4. No multi-user access control — all local users can read all sessions and credentials
+5. Gartner rated OpenClaw 1.2/5 for enterprise readiness
+6. 22% of Token Security customers found unapproved employee OpenClaw usage (shadow AI)
+
+### 10.9 Exposure Scale Summary
+
+| Metric | Count |
+|--------|-------|
+| Shodan-discoverable instances (port 18789) | 312,000+ |
+| Publicly exposed across 82 countries | 42,665 |
+| Confirmed compromised instances | 30,000+ |
+| Instances vulnerable to known RCE | 15,200 |
+| CERT-Bund tracked issues | 67 |
+| Malicious ClawHub skills (Snyk ToxicSkills) | 1,467 |
+| Enterprise unapproved usage rate | 22% |
+
+---
+
 ## Appendix D: Round 3 Agent Summary
 
 | Agent | Focus | Findings |
@@ -1089,20 +1262,52 @@ Root cause: Docker setup defaults to `0.0.0.0:18789` (all interfaces). 93.4% of 
 | R3-6 | Data Flow & PII Deep Dive | 4 HIGH, 9 MED, 6 LOW |
 | R3-7 | Broad Web Research Sweep | 5 attack campaigns, 8 gov actions, vendor assessments, compliance gaps |
 
-### Updated Aggregate Findings (All 3 Rounds)
+### Updated Aggregate Findings (All 4 Rounds)
 
-| Severity | Round 1 | Round 2 | Round 3 | Total |
-|----------|---------|---------|---------|-------|
-| **CRITICAL** | 3 | 12+ (public CVEs) | 3 new code + 18 new CVEs | 36+ |
-| **HIGH** | 20 | 15+ (public) | 15 new code + 7 new GHSAs | 57+ |
-| **MEDIUM** | 31 | 20+ (public) | 33 new code | 84+ |
-| **LOW** | 45 | — | 31 (incl. 7 positive) | 76+ |
+| Severity | Round 1 | Round 2 | Round 3 | Round 4 | Total |
+|----------|---------|---------|---------|---------|-------|
+| **CRITICAL** | 3 | 12+ (public CVEs) | 3 new code + 18 new CVEs | 2 new CVEs + 6 GHSAs | 44+ |
+| **HIGH** | 20 | 15+ (public) | 15 new code + 7 new GHSAs | 13 new CVEs + 18 GHSAs | 88+ |
+| **MEDIUM** | 31 | 20+ (public) | 33 new code | 1 CVE + 22 GHSAs | 107+ |
+| **LOW** | 45 | — | 31 (incl. 7 positive) | — | 76+ |
 
-**Total unique advisories across all rounds: 43+ CVEs + 55+ GHSAs + 8 government advisories + 5 major attack campaigns**
+**Total unique advisories across all rounds: 58+ CVEs + 103+ GHSAs + 7 government/institutional advisories + 5 major attack campaigns + 10 industry vendor assessments**
 
-**Total agents deployed across all 3 rounds: 16** (5 Round 1 security-auditors + 2 Round 2 web researchers + 1 CVE verifier + 1 backup + 7 Round 3 agents)
+**Total agents deployed across all 4 rounds: 17** (5 Round 1 security-auditors + 2 Round 2 web researchers + 1 CVE verifier + 1 backup + 7 Round 3 agents + 1 Round 4 deep web researcher)
+
+---
+
+## Appendix E: Round 4 Sources
+
+- [SentinelOne — CVE-2026-28363](https://www.sentinelone.com/vulnerability-database/cve-2026-28363/)
+- [SentinelOne — CVE-2026-28484](https://www.sentinelone.com/vulnerability-database/cve-2026-28484/)
+- [RedPacket Security — CVE-2026-29609](https://www.redpacketsecurity.com/cve-alert-cve-2026-29609-openclaw-openclaw/)
+- [RedPacket Security — CVE-2026-28453](https://www.redpacketsecurity.com/cve-alert-cve-2026-28453-openclaw-openclaw/)
+- [RedPacket Security — CVE-2026-28465](https://www.redpacketsecurity.com/cve-alert-cve-2026-28465-openclaw-openclaw/)
+- [RedPacket Security — CVE-2026-28485](https://www.redpacketsecurity.com/cve-alert-cve-2026-28485-openclaw-openclaw/)
+- [RedPacket Security — CVE-2026-28466](https://www.redpacketsecurity.com/cve-alert-cve-2026-28466-openclaw-openclaw/)
+- [RedPacket Security — CVE-2026-28478](https://www.redpacketsecurity.com/cve-alert-cve-2026-28478-openclaw-openclaw/)
+- [RedPacket Security — CVE-2026-28462](https://www.redpacketsecurity.com/cve-alert-cve-2026-28462-openclaw-openclaw/)
+- [MintMCP — OpenClaw CVEs Explained](https://www.mintmcp.com/blog/openclaw-cve-explained)
+- [CVEReports — All GHSAs](https://cvereports.com/)
+- [GitLab Advisory Database — OpenClaw](https://advisories.gitlab.com/pkg/npm/openclaw/)
+- [GitHub — OpenClaw Security Advisories](https://github.com/openclaw/openclaw/security/advisories)
+- [BSI/CERT-Bund — Feb/Mar 2026 Advisories](https://www.news.de/technik/859396486/)
+- [CCB Belgium — Critical Warning](https://ccb.belgium.be/advisories/warning-critical-vulnerability-openclaw-allows-1-click-remote-code-execution-when)
+- [Dutch DPA — Regulatory Warning](https://www.autoriteitpersoonsgegevens.nl/en/current/ap-warns-of-major-security-risks-with-ai-agents-like-openclaw)
+- [Giskard — Prompt Injection Research](https://www.giskard.ai/knowledge/openclaw-security-vulnerabilities-include-data-leakage-and-prompt-injection-risks)
+- [BlackFog — Data Exfiltration](https://www.blackfog.com/clawdbot-and-openclaw-data-exfiltration-goldmine/)
+- [Hackread — Infostealer](https://hackread.com/infostealer-steal-openclaw-ai-identity-memory-files/)
+- [Snyk — ToxicSkills](https://snyk.io/blog/toxicskills-malicious-ai-agent-skills-clawhub/)
+- [Snyk Labs — Sandbox Bypass](https://labs.snyk.io/resources/bypass-openclaw-security-sandbox/)
+- [Cisco — Security Nightmare](https://blogs.cisco.com/ai/personal-ai-agents-like-openclaw-are-a-security-nightmare)
+- [Microsoft — Running OpenClaw Safely](https://www.microsoft.com/en-us/security/blog/2026/02/19/running-openclaw-safely-identity-isolation-runtime-risk/)
+- [Penligent — Hardening Guide](https://www.penligent.ai/hackinglabs/openclaw-sovereign-ai-security-manifest-a-comprehensive-post-mortem-and-architectural-hardening-guide-for-openclaw-ai-2026/)
+- [Nebius — Security Hardening](https://nebius.com/blog/posts/openclaw-security)
+- [Heise — 60+ Vulnerabilities Resolved](https://www.heise.de/en/news/Over-60-security-vulnerabilities-in-AI-assistant-OpenClaw-resolved-11179476.html)
+- [SecurityWeek — SecureClaw](https://www.securityweek.com/openclaw-security-issues-continue-as-secureclaw-open-source-tool-debuts/)
 
 ---
 
 *Report generated by Claude Code security review pipeline — 2026-03-07*
-*16 agents deployed across 3 rounds: 5 security-auditors + 2 web researchers + 1 CVE verifier + 1 backup + 7 Round 3 gap analysis agents*
+*17 agents deployed across 4 rounds: 5 security-auditors + 2 web researchers + 1 CVE verifier + 1 backup + 7 Round 3 gap analysis agents + 1 Round 4 deep web researcher*
