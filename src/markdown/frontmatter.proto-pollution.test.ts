@@ -10,7 +10,9 @@ name: safe
 `;
     const result = parseFrontmatterBlock(content);
     expect(result.name).toBe("safe");
-    expect(result.__proto__).toBeUndefined();
+    // Accessing .__proto__ on any object returns Object.prototype ({}),
+    // so verify the key is not an own property instead.
+    expect(Object.prototype.hasOwnProperty.call(result, "__proto__")).toBe(false);
     expect(Object.keys(result)).not.toContain("__proto__");
   });
 

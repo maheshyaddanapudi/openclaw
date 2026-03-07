@@ -15,18 +15,21 @@ describe("github-copilot token", () => {
   });
 
   it("derives baseUrl from token", async () => {
-    expect(deriveCopilotApiBaseUrlFromToken("token;proxy-ep=proxy.example.com;")).toBe(
-      "https://api.example.com",
+    // Allowed: single-level subdomain of githubcopilot.com
+    expect(deriveCopilotApiBaseUrlFromToken("token;proxy-ep=proxy.githubcopilot.com;")).toBe(
+      "https://api.githubcopilot.com",
     );
-    expect(deriveCopilotApiBaseUrlFromToken("token;proxy-ep=https://proxy.foo.bar;")).toBe(
-      "https://api.foo.bar",
+    expect(deriveCopilotApiBaseUrlFromToken("token;proxy-ep=https://proxy.github.com;")).toBe(
+      "https://api.github.com",
     );
+    // Non-GitHub hostnames are rejected (SSRF protection)
+    expect(deriveCopilotApiBaseUrlFromToken("token;proxy-ep=proxy.example.com;")).toBeNull();
   });
 
   it("uses cache when token is still valid", async () => {
     const now = Date.now();
     loadJsonFile.mockReturnValue({
-      token: "cached;proxy-ep=proxy.example.com;",
+      token: "cached;proxy-ep=proxy.githubcopilot.com;",
       expiresAt: now + 60 * 60 * 1000,
       updatedAt: now,
     });
@@ -40,8 +43,8 @@ describe("github-copilot token", () => {
       fetchImpl: fetchImpl as unknown as typeof fetch,
     });
 
-    expect(res.token).toBe("cached;proxy-ep=proxy.example.com;");
-    expect(res.baseUrl).toBe("https://api.example.com");
+    expect(res.token).toBe("cached;proxy-ep=proxy.githubcopilot.com;");
+    expect(res.baseUrl).toBe("https://api.githubcopilot.com");
     expect(String(res.source)).toContain("cache:");
     expect(fetchImpl).not.toHaveBeenCalled();
   });
@@ -53,7 +56,7 @@ describe("github-copilot token", () => {
       ok: true,
       status: 200,
       json: async () => ({
-        token: "fresh;proxy-ep=https://proxy.contoso.test;",
+        token: "fresh;proxy-ep=https://proxy.github.com;",
         expires_at: Math.floor(Date.now() / 1000) + 3600,
       }),
     });
@@ -68,8 +71,8 @@ describe("github-copilot token", () => {
       fetchImpl: fetchImpl as unknown as typeof fetch,
     });
 
-    expect(res.token).toBe("fresh;proxy-ep=https://proxy.contoso.test;");
-    expect(res.baseUrl).toBe("https://api.contoso.test");
+    expect(res.token).toBe("fresh;proxy-ep=https://proxy.github.com;");
+    expect(res.baseUrl).toBe("https://api.github.com");
     expect(saveJsonFile).toHaveBeenCalledTimes(1);
   });
 });

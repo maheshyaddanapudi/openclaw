@@ -9,6 +9,22 @@ vi.mock("../infra/retry.js", () => ({
   retryAsync: async <T>(fn: () => Promise<T>) => fn(),
 }));
 
+// Bypass SSRF DNS-pinning guard so the test's global fetch mock is used directly.
+vi.mock("./remote-http.js", async (importOriginal) => {
+  const orig = await importOriginal();
+  return {
+    ...orig,
+    withRemoteHttpResponse: async (params: {
+      url: string;
+      init?: RequestInit;
+      onResponse: (res: Response) => Promise<unknown>;
+    }) => {
+      const res = await globalThis.fetch(params.url, params.init);
+      return params.onResponse(res);
+    },
+  };
+});
+
 describe("runVoyageEmbeddingBatches", () => {
   let runVoyageEmbeddingBatches: typeof import("./batch-voyage.js").runVoyageEmbeddingBatches;
 
