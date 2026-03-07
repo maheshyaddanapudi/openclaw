@@ -172,4 +172,6 @@ Before any PR or commit:
 @docs/architecture/repo-map.md
 @docs/architecture/modules.md
 @docs/dev/build.md
+@docs/system-summary-doc.md
+@docs/flow-message-doc.md
 @.claude/workflow-config.yml
