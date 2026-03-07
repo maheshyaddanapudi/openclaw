@@ -1,26 +1,26 @@
-# OpenClaw Security Audit Report — Consolidated (Rounds 1–7)
+# OpenClaw Security Audit Report — Consolidated (Rounds 1–8)
 
 **Date**: 2026-03-07
 **Auditor**: Claude Code (security-auditor, general-purpose, planner, Explore agents)
-**Scope**: Full codebase — all channels (core + 42 extensions), gateway, agents, routing, sessions, infrastructure, UI, protocol, dependencies
-**Methodology**: 7 rounds of static code analysis, completeness verification, dependency CVE research, web research (12 agents total)
+**Scope**: Full codebase — all channels (core + 42 extensions), gateway, agents, routing, sessions, config, providers, CLI commands, auto-reply pipeline, canvas host, skills, infrastructure, UI, protocol, dependencies
+**Methodology**: 8 rounds of static code analysis, completeness verification, dependency CVE research, web research (18 agents total)
 
 ---
 
 ## Executive Summary
 
-Seven rounds of security auditing identified **66 actionable findings** across the OpenClaw codebase, extensions, and dependency tree:
+Eight rounds of security auditing identified **86 actionable findings** across the OpenClaw codebase, extensions, and dependency tree:
 
 | Severity | Count | Status |
 |----------|-------|--------|
 | CRITICAL | 1 | Remediation planned (Phase 8) |
-| HIGH | 18 | Remediation planned (Phases 1-2, 9-10, 16-20, 28-35) |
-| MEDIUM | 30 | Remediation planned (Phases 3-7, 11-15, 21-27, 36-47) |
-| LOW | 17 | Accepted risk / deferred |
+| HIGH | 24 | Remediation planned (Phases 1-2, 9-10, 16-20, 28-35, 48-55) |
+| MEDIUM | 40 | Remediation planned (Phases 3-7, 11-15, 21-27, 36-47, 56-65) |
+| LOW | 21 | Accepted risk / deferred |
 
-Additionally, **45+ positive security findings** confirmed mature practices across SSRF guards, path traversal protection, timing-safe comparisons, body size limits, ReDoS protection, sandbox validation, and more.
+Additionally, **65+ positive security findings** confirmed mature practices across SSRF guards, path traversal protection, timing-safe comparisons, body size limits, ReDoS protection, sandbox validation, prototype pollution guards, token redaction, command authorization, and more.
 
-All 20+ known OpenClaw product CVEs (through ClawJacked, 2026.2.25) are patched in the current version (2026.3.3).
+All 30+ known OpenClaw product CVEs (through CVE-2026-28363, fix version 2026.2.23) are patched in the current version (2026.3.3).
 
 ---
 
@@ -99,6 +99,31 @@ All 20+ known OpenClaw product CVEs (through ClawJacked, 2026.2.25) are patched 
 | SEC-R7-MED-15 | MEDIUM | TOCTOU | Device identity directory created without explicit mode | 47 |
 | SEC-R7-MED-16 | MEDIUM | Timing Attack | Extension relay auth uses `===` not `safeEqualSecret` | 47 |
 
+### Round 8: CLI, Auto-Reply, Providers, Canvas, Skills, Cross-Cutting
+
+| ID | Severity | Category | Summary | Phase |
+|----|----------|----------|---------|-------|
+| SEC-R8-HIGH-1 | HIGH | Command Injection | SCP remote path injection via shell metacharacters in media paths | 48 |
+| SEC-R8-HIGH-2 | HIGH | Path Traversal | `/export-session` writes HTML to arbitrary filesystem paths | 49 |
+| SEC-R8-HIGH-3 | HIGH | SSRF | Provider URL SSRF via configurable Ollama/vLLM `baseUrl` | 50 |
+| SEC-R8-HIGH-4 | HIGH | Auth Bypass | Copilot token `proxy-ep` URL derivation without hostname validation | 51 |
+| SEC-R8-HIGH-5 | HIGH | XSS | Canvas host serves user HTML without CSP headers + unauthenticated WS | 52 |
+| SEC-R8-HIGH-6 | HIGH | ReDoS | Mention pattern regex from config uses raw `new RegExp` without `compileSafeRegex` | 53 |
+| SEC-R8-MED-1 | MEDIUM | Info Disclosure | Session file path disclosed in error messages to chat channel | 56 |
+| SEC-R8-MED-2 | MEDIUM | Auth Bypass | `/config show` exposes full raw configuration to chat channel | 57 |
+| SEC-R8-MED-3 | MEDIUM | Input Validation | `/debug set` runtime config overrides bypass schema validation | 58 |
+| SEC-R8-MED-4 | MEDIUM | PII Leakage | Allowlist entries (phone numbers) in CLI status output | 59 |
+| SEC-R8-MED-5 | MEDIUM | Info Disclosure | Qwen OAuth error response body in error message | 60 |
+| SEC-R8-MED-6 | MEDIUM | Credential Storage | Copilot token cached as plaintext JSON on disk | 60 |
+| SEC-R8-MED-7 | MEDIUM | Concurrency | Skill env overrides mutate global `process.env` (cross-session leakage) | 61 |
+| SEC-R8-MED-8 | MEDIUM | Supply Chain | Skills loaded from untrusted workspace directories without verification | 62 |
+| SEC-R8-MED-9 | MEDIUM | Info Disclosure | Stack traces in session-memory handler logs | 63 |
+| SEC-R8-MED-10 | MEDIUM | Secret Exposure | `formatErrorWithStack` missing `redactSensitiveText` | 63 |
+| SEC-R8-MED-11 | MEDIUM | Input Validation | YAML frontmatter parsing missing proto-pollution filter | 64 |
+| SEC-R8-MED-12 | MEDIUM | Robustness | Unguarded `JSON.parse` on external data in 3+ production paths | 65 |
+| SEC-R8-MED-13 | MEDIUM | Info Disclosure | Browser server returns raw `err.message` in HTTP responses | 65 |
+| SEC-R8-MED-14 | MEDIUM | Race Condition | Session store read on non-atomic-rename filesystems | 65 |
+
 ### Dependency Findings
 
 | ID | Severity | Category | Summary | Phase |
@@ -109,6 +134,7 @@ All 20+ known OpenClaw product CVEs (through ClawJacked, 2026.2.25) are patched 
 | SEC-DEP-MED-2 | MEDIUM | Transitive | protobufjs transitive — verify >= 7.2.5 (CVE-2023-36665) | — (verify) |
 | SEC-DEP-MED-3 | MEDIUM | Supply Chain | Verify chalk/strip-ansi not at compromised versions | — (verify) |
 | SEC-DEP-MED-4 | MEDIUM | Transitive | @discordjs/opus — verify patched (CVE-2024-21521) | — (verify) |
+| SEC-DEP-MED-5 | MEDIUM | Transitive | sqlite-vec may bundle SQLite < 3.50.2 (CVE-2025-6965) | — (verify) |
 
 ### LOW / Accepted Risk
 
@@ -131,113 +157,120 @@ All 20+ known OpenClaw product CVEs (through ClawJacked, 2026.2.25) are patched 
 | SEC-R7-LOW-5 | LOW | No rate limit on OpenAI-compat HTTP endpoints |
 | SEC-R7-LOW-6 | LOW | Auth profile credentials plaintext JSON (0o600 mitigates) |
 | SEC-R7-LOW-7 | LOW | No memory zeroing for secrets (JS platform limitation) |
+| SEC-R8-LOW-1 | LOW | Canvas host `innerHTML` in default page (non-user input) |
+| SEC-R8-LOW-2 | LOW | Slack HTTP duplicate webhook path silently ignored |
+| SEC-R8-LOW-3 | LOW | Session memory handler logs `~`-prefixed file paths |
+| SEC-R8-LOW-4 | LOW | GitHub/Qwen OAuth client IDs hardcoded (public by design) |
 
 ---
 
-## Detailed Findings — Rounds 1-6
+## Detailed Findings — Rounds 1-7
 
-*See previous report sections. All findings from Rounds 1-6 remain unchanged and are fully described in the remediation plan below.*
+*All findings from Rounds 1-7 remain unchanged. See previous sections for full details.*
 
 ---
 
-## Detailed Findings — Round 7 (New)
+## Detailed Findings — Round 8 (New)
 
-### SEC-R7-HIGH-1: Telegram PII in logs
+### SEC-R8-HIGH-1: SCP Remote Path Injection
 
-**Files**:
-- `src/telegram/bot-message-context.ts` — lines 332, 341, 380, 715, 735, 951 (`chatId` in error/debug logs)
-- `src/telegram/bot-handlers.ts` — lines 524, 575, 708, 715 (`chatId`, `senderId` in access-control blocks)
-- `src/telegram/dm-access.ts` — lines 84-95 (`chatId`, `senderUserId`, `username`, `firstName`, `lastName` in structured logger), line 116 (`sender.candidateId`)
-- `src/telegram/send.ts` — lines 836, 947 (`chatId`, `messageId` in delete/edit operations)
+**File**: `src/auto-reply/reply/stage-sandbox-media.ts:291-326`
 
-Telegram numeric user IDs are stable PII identifiers. The structured logger at `dm-access.ts:84-95` is especially concerning as it persists to external logging systems.
-
-### SEC-R7-HIGH-2: Signal phone numbers/UUIDs in logs
-
-**Files**:
-- `src/signal/monitor/event-handler.ts` — lines 555, 705, 713 (`senderDisplay` contains E.164 phone numbers)
-- `src/signal/monitor.ts` — line 323 (`target` contains phone number e.g. `signal:+15551234567`)
-
-### SEC-R7-HIGH-3: iMessage phone/email handles in logs
-
-**Files**:
-- `src/imessage/monitor/monitor-provider.ts` — lines 276, 293 (`decision.senderId` is phone/email)
-- `src/imessage/monitor/inbound-processing.ts` — lines 178, 190 (`sender` is full phone/email handle)
-
-### SEC-R7-HIGH-4 + HIGH-5: Client credentials in localStorage
-
-**Files**:
-- `ui/src/ui/device-identity.ts:103` — Ed25519 private key stored as plain JSON string
-- `ui/src/ui/storage.ts:9` — Gateway auth token in plaintext
-- `ui/src/ui/device-auth.ts:35` — Device auth tokens
-
-Any XSS vulnerability (including browser extensions) can exfiltrate these permanently. localStorage has no expiry, no access control, persists across sessions.
-
-### SEC-R7-HIGH-6: CSRF via Host header origin fallback
-
-**File**: `src/gateway/origin-check.ts` (lines 50-54)
-
-When `gateway.controlUi.dangerouslyAllowHostHeaderOriginFallback` is `true`, origin check accepts any WS connection where Origin host matches Host header. Enables cross-site WebSocket hijacking on non-loopback deployments.
-
-### SEC-R7-HIGH-7: Timing-unsafe token comparison
-
-**File**: `src/gateway/startup-auth.ts` (line 337)
+The `scpFile` function constructs an SCP command where `remotePath` is interpolated directly into the argument. While `--` separator prevents option injection and `resolveAbsolutePath` + `isAllowedSourcePath` validate path structure, shell metacharacters (spaces, newlines, backticks) in the path are not escaped. An iMessage `MediaRemoteHost` with crafted attachment paths could manipulate the SCP target.
 
 ```typescript
-if (hooksToken !== gatewayToken) { return; }
+"--",
+`${safeRemoteHost}:${remotePath}`,  // remotePath not escaped for shell
+localPath,
 ```
 
-Uses `!==` instead of `safeEqualSecret()`. An attacker who can set `hooks.token` (config injection) could reconstruct gateway token via timing analysis.
+**Fix**: Apply strict path character validation (reject control characters, quotes, backticks, semicolons) or use `rsync --protect-args`.
 
-### SEC-R7-HIGH-8: Tlon command injection
+### SEC-R8-HIGH-2: Export Session Path Traversal
 
-**File**: `extensions/tlon/index.ts` (lines 156-174)
+**File**: `src/auto-reply/reply/commands-export-session.ts:173-188`
 
-LLM-controlled `command` parameter only validates first token (subcommand) against allowlist. Subsequent arguments passed unvalidated to `spawn(binary, args)`. Crafted args like `--config /etc/passwd` could exploit tlon CLI.
+The `/export-session` command accepts a user-provided output path via chat, uses `path.resolve()`, creates directories recursively, and writes HTML content to any writable filesystem location. An authorized user can overwrite arbitrary files.
 
-### SEC-R7-HIGH-9: Voice-call transcripts in logs
+```typescript
+const outputPath = args.outputPath
+  ? path.resolve(args.outputPath.startsWith("~") ? args.outputPath.replace("~", process.env.HOME ?? "") : args.outputPath)
+  : path.join(params.workspaceDir, defaultFileName);
+fs.mkdirSync(outputDir, { recursive: true });
+fs.writeFileSync(outputPath, html, "utf-8");
+```
 
-**File**: `extensions/voice-call/src/webhook.ts` (lines 106, 432, 464)
+**Fix**: Restrict output path to the agent workspace directory using `writeFileWithinRoot` or similar boundary enforcement.
 
-Full user speech transcripts logged via `console.log`. Voice content is among the most sensitive PII (medical, financial, legal conversations).
+### SEC-R8-HIGH-3: Provider URL SSRF
 
-### SEC-R7-HIGH-10: Tlon MIME confusion
+**Files**:
+- `src/agents/models-config.providers.ts:246` — `queryOllamaContextWindow` fetches `${apiBase}/api/show`
+- `src/agents/models-config.providers.ts:283` — `discoverOllamaModels` fetches `${apiBase}/api/tags`
+- `src/agents/models-config.providers.ts:348` — `discoverVllmModels` fetches user-provided URL
 
-**Files**: `extensions/tlon/src/monitor/media.ts:83-84`, `extensions/tlon/src/urbit/upload.ts:38`
+Configurable provider endpoints (Ollama, vLLM) make outbound HTTP requests without private IP validation. If config is set to `http://169.254.169.254/latest/meta-data`, the gateway fetches from cloud metadata services during model discovery.
 
-MIME type derived from Content-Type header instead of content bytes. Malicious server could serve SVG (with embedded JS) while claiming `image/png`.
+**Fix**: Validate provider URLs against private/link-local IP blocklist or use `fetchWithSsrFGuard`.
 
-### SEC-R7-MED-1 through MED-16
+### SEC-R8-HIGH-4: Copilot Token URL Derivation
 
-**SEC-R7-MED-1**: Telegram dm-access structured logger — `src/telegram/dm-access.ts:84-95` — logs `chatId`, `senderUserId`, `username`, `firstName`, `lastName` via `logger.info()` (structured, not just verbose)
+**File**: `src/providers/github-copilot-token.ts:57-78`
 
-**SEC-R7-MED-2**: Session fork raw JSONL — `src/auto-reply/reply/session-fork.ts:58` — `fs.writeFileSync` bypassing `SessionManager` abstraction
+`deriveCopilotApiBaseUrlFromToken` extracts `proxy-ep` from the Copilot token and builds an HTTPS URL via hostname string replacement. No validation against known Copilot domains. A MITM-intercepted or crafted token with `proxy-ep=http://attacker.com` would redirect all API calls.
 
-**SEC-R7-MED-3**: Docker sandbox shell:true — `src/agents/sandbox/docker.ts:55-56,72-76` — Windows fallback with `allowShellFallback: true`
+```typescript
+const host = proxyEp.replace(/^https?:\/\//, "").replace(/^proxy\./i, "api.");
+return `https://${host}`;
+```
 
-**SEC-R7-MED-4**: iMessage RPC raw line — `src/imessage/client.ts:192` — malformed JSON from RPC process logged with full raw content
+**Fix**: Validate derived hostname against `*.githubcopilot.com` or maintain an allowlist.
 
-**SEC-R7-MED-5**: System-event host/IP — `src/gateway/server-methods/system.ts:43-44,102-106` — client-supplied host/IP enqueued without sanitization
+### SEC-R8-HIGH-5: Canvas Host Missing CSP
 
-**SEC-R7-MED-6**: Synology TLS disabled — `extensions/synology-chat/src/client.ts:46,96,126,201,240` — `allowInsecureSsl` defaults to `true` in function signatures
+**File**: `src/canvas-host/server.ts:362-365`
 
-**SEC-R7-MED-7**: Synology PII — `extensions/synology-chat/src/webhook-handler.ts:304,311,330` — user_id, username, message preview in logs
+The canvas host serves arbitrary HTML from `~/.openclaw/canvas/` with no Content-Security-Policy, X-Frame-Options, or sandboxing headers. The `injectCanvasLiveReload` function injects JavaScript with a WebSocket connection that has no authentication. A malicious skill could drop HTML into the canvas directory to execute XSS in the native app WebView context, potentially accessing `openclawCanvasA2UIAction` bridge.
 
-**SEC-R7-MED-8**: Diffs unsafeCSS — `extensions/diffs/src/viewer-client.ts:230` — CSS injection via `unsafeCSS` field
+**Fix**: Add CSP headers restricting script sources. Add authentication to WebSocket upgrade. Consider sandbox-mode iframes.
 
-**SEC-R7-MED-9/10**: Extension SSRF — `extensions/mattermost/src/mattermost/client.ts:86-93`, `extensions/matrix/src/directory-live.ts:41`, `extensions/thread-ownership/index.ts:105` — configurable base URLs without SSRF guard
+### SEC-R8-HIGH-6: Mention Pattern ReDoS
 
-**SEC-R7-MED-11**: Zalouser creds — `extensions/zalouser/src/zalo-js.ts:374-391` — plaintext JSON without `0o600` permissions
+**File**: `src/auto-reply/reply/mentions.ts:70`
 
-**SEC-R7-MED-12**: senderIsOwner — `src/gateway/openai-http.ts:127`, `src/gateway/openresponses-http.ts:265` — hardcoded `true` for all authed callers
+`buildMentionRegexes()` compiles regex from config `mentionPatterns` using raw `new RegExp(pattern, "i")` without `compileSafeRegex()`. A pattern like `(a+)+$` causes catastrophic backtracking on every inbound group message.
 
-**SEC-R7-MED-13**: CSP gaps — `src/gateway/control-ui-csp.ts:14-15` — `ws:` in connect-src, `https:` wildcard in img-src (tracking pixels)
+**Fix**: Replace `new RegExp(pattern, "i")` with `compileSafeRegex(pattern, "i")`.
 
-**SEC-R7-MED-14**: Unsafe content flag — `src/gateway/hooks-mapping.ts:94` — `allowUnsafeExternalContent` bypasses sanitization
+### SEC-R8-MED-1 through MED-14
 
-**SEC-R7-MED-15**: Device identity dir — `src/infra/device-identity.ts:24-26` — `fs.mkdirSync()` without explicit mode, TOCTOU before 0o600 file write
+**SEC-R8-MED-1**: Session file path in error — `src/auto-reply/reply/commands-export-session.ts:126,142` — returns full filesystem path to chat channel in error messages
 
-**SEC-R7-MED-16**: Relay auth timing — `src/browser/extension-relay-auth.ts:78` — `===` instead of `safeEqualSecret()`
+**SEC-R8-MED-2**: Config show exposure — `src/auto-reply/reply/commands-config.ts:102-106` — `/config show` returns full raw JSON to chat channel (may include sensitive paths, credential metadata in shared group chats)
+
+**SEC-R8-MED-3**: Debug set bypass — `src/auto-reply/reply/commands-config.ts:246-264` — `/debug set` applies runtime config overrides without schema validation, potentially disabling security gates
+
+**SEC-R8-MED-4**: Allowlist PII — `src/commands/channels/status.ts:145` — `allowFrom` entries (phone numbers/user IDs) displayed in CLI output, capturable by log collection
+
+**SEC-R8-MED-5**: Qwen OAuth error — `src/providers/qwen-portal-oauth.ts:36` — full response body text in thrown error; may not be caught by `redactSensitiveText` patterns
+
+**SEC-R8-MED-6**: Copilot token cache — `src/providers/github-copilot-token.ts:16` — API token cached as plaintext JSON at `~/.openclaw/state/credentials/github-copilot.token.json` (0o600 but unencrypted)
+
+**SEC-R8-MED-7**: Skill env leakage — `src/agents/skills/env-overrides.ts:132-138` — skill env overrides mutate global `process.env`; concurrent agent sessions could see each other's skill-injected env vars before reverter runs
+
+**SEC-R8-MED-8**: Workspace skills trust — `src/agents/skills/workspace.ts:354-367` — skills loaded from 6+ directories including workspace `.agents/skills/` without verification; malicious SKILL.md in cloned repos becomes part of LLM system prompt
+
+**SEC-R8-MED-9**: Stack traces logged — `src/hooks/bundled/session-memory/handler.ts:325-326` — `err.message` and `err.stack` logged directly to structured log output
+
+**SEC-R8-MED-10**: Error redaction gap — `src/commands/models/list.errors.ts:3-7` — `formatErrorWithStack` returns `err.stack` without applying `redactSensitiveText()`, unlike `formatErrorMessage`
+
+**SEC-R8-MED-11**: Frontmatter proto-pollution — `src/markdown/frontmatter.ts:62` — `Object.entries()` iteration on parsed YAML does not filter `__proto__`/`constructor`/`prototype` keys (mitigated by `yaml` library's `schema: "core"` but missing defense-in-depth)
+
+**SEC-R8-MED-12**: Unguarded JSON.parse — `src/infra/outbound/delivery-queue.ts:131`, `src/discord/api.ts:25`, `src/infra/outbound/tool-payload.ts:19` — `JSON.parse` on disk/API data without try/catch; corrupted file crashes process
+
+**SEC-R8-MED-13**: Browser error disclosure — `src/browser/server-context.ts:207,210` — raw `err.message` from SsrFBlockedError returned in HTTP 400 responses
+
+**SEC-R8-MED-14**: Session store race — `src/config/sessions/store.ts:223-249` — single read attempt on non-Windows with no retry; may observe partial data on non-atomic-rename filesystems (NFS)
 
 ---
 
@@ -262,28 +295,41 @@ MIME type derived from Content-Type header instead of content bytes. Malicious s
 | minimatch | 10.2.4 | CVE-2026-26996, CVE-2026-27903, CVE-2026-27904 |
 | @hono/node-server | 1.19.10 | CVE-2026-29087 |
 
-### No Known CVEs
+### No Known CVEs (Round 8 verified)
 
-Zod 4, TypeBox 0.34, Lit 3.3, Commander.js 14, @line/bot-sdk 10, dotenv 17, chokidar 5, croner 10, tsdown, oxlint, gaxios, linkedom, yaml (eemeli), @clack/prompts, @grammyjs/runner, @homebridge/ciao, signal-utils, tslog, @napi-rs/canvas.
+Grammy ^1.41.0, @buape/carbon (pinned), @slack/bolt ^4.6.0, @slack/web-api ^7.14.1, signal-cli, Commander.js 14, Express 5.2.1, ws ^8.19.0 (CVE-2024-37890 fixed in 8.17.1), sharp ^0.34.5, Lit 3.3, tsdown, tsgo, Zod 4, TypeBox 0.34, @line/bot-sdk 10, dotenv 17, chokidar 5, croner 10, oxlint, gaxios, linkedom, yaml (eemeli), @clack/prompts, @grammyjs/runner, @homebridge/ciao, signal-utils, tslog, @napi-rs/canvas.
 
 ### OpenClaw Product CVEs — All Patched
 
-20+ CVEs disclosed through March 2026 (CVE-2026-25253, CVE-2026-24763, ClawJacked, etc.) are all fixed in version 2026.3.3. No action needed.
+30+ CVEs disclosed through March 2026 (CVE-2026-25253, CVE-2026-24763, ClawJacked, CVE-2026-28363 CVSS 9.9, and more) are all fixed through version 2026.2.23, included in current 2026.3.3. No action needed.
+
+Notable recent disclosures (post-ClawJacked, March 2026 batch):
+- CVE-2026-28363 (CVSS 9.9): `tools.exec.safeBins` sort bypass via GNU long-option abbreviations
+- CVE-2026-28474 (CVSS 9.3): Nextcloud Talk allowlist bypass via actor.name spoofing
+- CVE-2026-28446 (CVSS 9.2): Voice-call extension inbound allowlist bypass
+
+### Supply Chain Alerts (Feb-March 2026)
+
+| Alert | Impact on OpenClaw |
+|-------|-------------------|
+| SANDWORM_MODE (Feb 24) — 19 typosquatting npm packages including OpenClaw lookalikes | Verify lockfile integrity; `pnpm.minimumReleaseAge` provides some protection |
+| Cline CLI compromise (Feb 17) — installs OpenClaw covertly | Not a vulnerability in OpenClaw itself |
+| Malicious Baileys forks (lotusbail, @dappaoffc/baileys-mod) | Verify using legitimate `@whiskeysockets/baileys` in lockfile |
 
 ---
 
 ## Positive Security Findings
 
-The codebase demonstrates mature security practices confirmed across multiple audit rounds:
+The codebase demonstrates mature security practices confirmed across 8 audit rounds (65+ positive findings):
 
-1. **SSRF protection** — `fetchWithSsrFGuard` with DNS pinning, private IP blocking, redirect credential stripping *(issue: inconsistently applied)*
-2. **Path traversal** — `readFileWithinRoot`, `openBoundaryFileSync`, `readLocalFileSafely` with `O_NOFOLLOW`, inode verification
-3. **Timing-safe comparisons** — `safeEqualSecret` via `timingSafeEqual` on all critical auth paths *(issue: 2 non-critical paths missed)*
-4. **HTTP body limits** — `readRequestBodyWithLimit` with configurable `maxBytes`, timeouts
-5. **ReDoS protection** — `compileSafeRegex` with nested repetition detection, 2048-char input bound
-6. **Session security** — atomic writes, file locking, strict ID validation
+1. **SSRF protection** — `fetchWithSsrFGuard` with DNS pinning, private IP blocking, redirect credential stripping *(inconsistently applied — see provider URLs)*
+2. **Path traversal** — `readFileWithinRoot`, `openBoundaryFileSync`, `readLocalFileSafely` with `O_NOFOLLOW`, inode verification, canvas `resolveFileWithinRoot`
+3. **Timing-safe comparisons** — `safeEqualSecret` via `timingSafeEqual` on all critical auth paths *(2 non-critical paths missed)*
+4. **HTTP body limits** — `readRequestBodyWithLimit` with configurable `maxBytes`, timeouts; Slack HTTP 1MB guard
+5. **ReDoS protection** — `compileSafeRegex` with nested repetition detection, 2048-char input bound *(mention patterns missed)*
+6. **Session security** — atomic writes, file locking, strict ID validation (`SAFE_SESSION_ID_RE`), in-process lock queues
 7. **Command injection prevention** — `shouldSpawnWithShell` returns `false`, `execFile` preferred
-8. **Plugin security** — ownership checks, boundary file opening, symlink escape prevention
+8. **Plugin security** — ownership checks, boundary file opening, symlink escape prevention, realpath validation
 9. **Sandbox validation** — blocks `/etc`, `/proc`, Docker socket, root mounts, validates seccomp/apparmor
 10. **Sandbox env sanitization** — blocks API key patterns, base64 credentials, null bytes
 11. **Skill scanner** — detects eval, shell exec, crypto-mining, obfuscation
@@ -291,170 +337,147 @@ The codebase demonstrates mature security practices confirmed across multiple au
 13. **UI sanitization** — DOMPurify with strict allowlists, no raw `unsafeHTML` with user data
 14. **WS protocol validation** — AJV schemas on all frames, connect challenge-response nonce
 15. **HTTP security headers** — `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, optional HSTS
-16. **Extension security** — MSTeams `safeFetch` (exemplary SSRF), BlueBubbles path traversal protection, Nostr atomic writes
+16. **Extension security** — MSTeams `safeFetch`, BlueBubbles path traversal protection, Nostr atomic writes
 17. **No hardcoded secrets** — only test fixtures with obvious synthetic values
 18. **Gateway startup** — refuses to bind to network without auth configured
+19. **Prototype pollution guards** — `isBlockedObjectKey` used consistently in config merge, runtime overrides, webhook mapping, account normalization
+20. **Token redaction** — comprehensive `redactSensitiveText` covering sk-*, ghp_*, xox-*, AIza*, PEM blocks, auth headers
+21. **Command authorization** — consistent `isAuthorizedSender` checks on all auto-reply commands; directive injection gated for unauthorized senders
+22. **Env substitution safety** — env var names restricted to `^[A-Z_][A-Z0-9_]*$`
+23. **Config include safety** — path traversal protection, symlink resolution, circular include detection, depth cap 10, size cap 2MB
+24. **Slack file download** — validates hostname against Slack domains before sending bot token
+25. **Skill frontmatter validation** — install specs (brew, npm, go, UV, download URLs) validated against strict patterns
+26. **Auth rate limiting** — `AuthRateLimiter` on gateway HTTP endpoints
+27. **Untrusted context labeling** — `appendUntrustedContext` wraps external metadata with injection-resistant framing
 
 ---
 
-## Remediation Plan — 47 Phases
+## Remediation Plan — 65 Phases
 
-### Phases 1-27: Unchanged from Round 6 report
+### Phases 1-47: Unchanged from Round 7 report
 
-*With these amendments:*
+*With these amendments from Round 8:*
 
-- **Phase 1**: Now includes `src/web/auto-reply/monitor/on-message.ts` (lines 88, 364) — 4 files total
-- **Phase 3**: Now includes 7 additional LINE instances — 17 total across 5 files
-- **Phase 4**: Now includes 3 additional Discord files — 5 files total
-- **Phase 15**: Now covers 5 log locations instead of 1
-- **Phase 18**: pnpm target version updated to **>= 10.27.0** (additional CVE-2025-69262 command injection via .npmrc)
+- **Phase 6 (SEC-MED-7)**: Export session path traversal now has a more severe instance (SEC-R8-HIGH-2) — elevated to HIGH, merged into Phase 49
+- **Phase 17**: Provider SSRF now includes Ollama/vLLM discovery endpoints (SEC-R8-HIGH-3) — 6 source files total
+- **Phase 25 (R6-MED-5)**: Discord RegExp without escaping confirmed again in Round 8 at additional location
 
-### Phase 28: Telegram PII Redaction (HIGH — SEC-R7-HIGH-1, R7-MED-1)
+### Phase 48: SCP Remote Path Sanitization (HIGH — SEC-R8-HIGH-1)
 
-**Complexity**: Moderate | **Files**: 4 source
+**Complexity**: Simple | **Files**: 1 source
 
-1. **`src/telegram/bot-message-context.ts`**: Import `redactIdentifier`. Wrap `chatId` at lines 332, 341, 380, 715, 735, 951.
-2. **`src/telegram/bot-handlers.ts`**: Wrap `chatId` and `senderId` at lines 524, 575, 708, 715.
-3. **`src/telegram/dm-access.ts`**: Wrap `chatId`, `senderUserId`, `sender.candidateId` at lines 84-95, 116. Replace `username`, `firstName`, `lastName` with `"present"/"none"` indicators in structured log.
-4. **`src/telegram/send.ts`**: Wrap `chatId` at lines 836, 947.
+**`src/auto-reply/reply/stage-sandbox-media.ts`** (lines 291-326): Add strict character validation on `remotePath` — reject control characters, backticks, semicolons, newlines, and unescaped quotes before passing to `spawn`.
 
-**Commit**: `fix(telegram): redact user IDs and names in log statements`
+**Commit**: `fix(agents): sanitize SCP remote path against shell metacharacters`
 
-### Phase 29: Signal PII Redaction (HIGH — SEC-R7-HIGH-2)
+### Phase 49: Export Session Path Restriction (HIGH — SEC-R8-HIGH-2)
 
-**Complexity**: Simple | **Files**: 2 source
+**Complexity**: Simple | **Files**: 1 source
 
-1. **`src/signal/monitor/event-handler.ts`**: Import `redactIdentifier`. Wrap `senderDisplay` at lines 555, 705, 713.
-2. **`src/signal/monitor.ts`**: Wrap `target` at line 323.
+**`src/auto-reply/reply/commands-export-session.ts`** (lines 173-188): Restrict output path to the agent workspace directory. Use `writeFileWithinRoot` or validate `outputPath` is inside `params.workspaceDir`. Remove `path.resolve` on arbitrary user input.
 
-**Commit**: `fix(signal): redact phone numbers and UUIDs in log statements`
+**Commit**: `fix(agents): restrict /export-session output to workspace directory`
 
-### Phase 30: iMessage PII Redaction (HIGH — SEC-R7-HIGH-3, R7-MED-4)
-
-**Complexity**: Simple | **Files**: 3 source
-
-1. **`src/imessage/monitor/monitor-provider.ts`**: Import `redactIdentifier`. Wrap `decision.senderId` at lines 276, 293.
-2. **`src/imessage/monitor/inbound-processing.ts`**: Wrap `sender` at lines 178, 190.
-3. **`src/imessage/client.ts`**: Truncate/redact raw RPC line in error at line 192 to avoid leaking secrets from subprocess output.
-
-**Commit**: `fix(imessage): redact sender handles and RPC output in logs`
-
-### Phase 31: UI Credential Storage Hardening (HIGH — SEC-R7-HIGH-4, R7-HIGH-5)
-
-**Complexity**: Moderate | **Files**: 3 source
-
-1. **`ui/src/ui/device-identity.ts`**: Encrypt the Ed25519 private key before storing in localStorage using a key derived from the gateway URL + a user-provided passphrase, or use `sessionStorage` instead (cleared on tab close).
-2. **`ui/src/ui/storage.ts`**: Move gateway auth token to `sessionStorage` or encrypt before storing.
-3. **`ui/src/ui/device-auth.ts`**: Same pattern for device auth tokens.
-
-**Alternative (simpler)**: Switch from `localStorage` to `sessionStorage` for all sensitive values. This limits exposure to the current tab/session lifetime.
-
-**Commit**: `fix(ui): move sensitive credentials from localStorage to sessionStorage`
-
-### Phase 32: CSRF Protection for Host Header Fallback (HIGH — SEC-R7-HIGH-6)
+### Phase 50: Provider URL SSRF Guards (HIGH — SEC-R8-HIGH-3)
 
 **Complexity**: Moderate | **Files**: 1 source
 
-**`src/gateway/origin-check.ts`** (lines 50-54): When `dangerouslyAllowHostHeaderOriginFallback` is enabled, additionally require a CSRF token or restrict to loopback-only deployments. Add a startup warning.
+**`src/agents/models-config.providers.ts`** (lines 246, 283, 348): Add private IP validation to Ollama and vLLM discovery fetches. Use `fetchWithSsrFGuard` or validate `baseUrl` against RFC 1918 / link-local ranges.
 
-**Commit**: `fix(gateway): add CSRF protection when Host header origin fallback is enabled`
+**Commit**: `fix(agents): add SSRF guards to provider URL discovery fetches`
 
-### Phase 33: Timing-Safe Token Comparisons (HIGH — SEC-R7-HIGH-7, R7-MED-16)
+### Phase 51: Copilot Token URL Validation (HIGH — SEC-R8-HIGH-4)
 
-**Complexity**: Trivial | **Files**: 2 source
+**Complexity**: Simple | **Files**: 1 source
 
-1. **`src/gateway/startup-auth.ts`** (line 337): Replace `hooksToken !== gatewayToken` with `!safeEqualSecret(hooksToken, gatewayToken)`.
-2. **`src/browser/extension-relay-auth.ts`** (line 78): Replace `===` with `safeEqualSecret()`.
+**`src/providers/github-copilot-token.ts`** (lines 57-78): Validate derived hostname against `*.githubcopilot.com` or maintain a static allowlist of known Copilot API domains.
 
-**Commit**: `fix(security): use timing-safe comparison for all token checks`
+**Commit**: `fix(providers): validate Copilot API base URL against domain allowlist`
 
-### Phase 34: Tlon Command Argument Validation (HIGH — SEC-R7-HIGH-8)
+### Phase 52: Canvas Host Security Headers (HIGH — SEC-R8-HIGH-5)
 
 **Complexity**: Moderate | **Files**: 1 source
 
-**`extensions/tlon/index.ts`** (lines 156-174): Validate all arguments against an allowlist per subcommand, not just the subcommand name. Reject flags like `--config`, `--output` that could read/write arbitrary files. Consider structured parameter schema instead of free-form command string.
+**`src/canvas-host/server.ts`** (lines 362-365): Add `Content-Security-Policy` headers restricting script sources to `'self'`. Add `X-Frame-Options: SAMEORIGIN`. Add authentication to WebSocket upgrade path (validate `oc_cap` token).
 
-**Commit**: `fix(tlon): validate all command arguments against per-subcommand allowlist`
+**Commit**: `fix(canvas): add CSP headers and WebSocket authentication`
 
-### Phase 35: Voice-Call + Tlon Media Fixes (HIGH — SEC-R7-HIGH-9, R7-HIGH-10)
+### Phase 53: Mention Pattern Safe Regex (HIGH — SEC-R8-HIGH-6)
 
-**Complexity**: Simple | **Files**: 2 source
+**Complexity**: Trivial | **Files**: 1 source
 
-1. **`extensions/voice-call/src/webhook.ts`** (lines 106, 432, 464): Remove transcript content from log output. Log only metadata (callId, transcript length).
-2. **`extensions/tlon/src/monitor/media.ts`** (lines 83-84): Use `detectMime` from content bytes instead of Content-Type header.
+**`src/auto-reply/reply/mentions.ts:70`**: Replace `new RegExp(pattern, "i")` with `compileSafeRegex(pattern, "i")` from `src/security/safe-regex.ts`.
 
-**Commit**: `fix(extensions): redact voice transcripts and validate media MIME from content`
+**Commit**: `fix(agents): use compileSafeRegex for mention pattern compilation`
 
-### Phase 36: Telegram Structured Logger PII (MEDIUM — SEC-R7-MED-1)
+### Phases 54-55: Reserved for dependency actions
 
-*Covered by Phase 28.*
+**Phase 54**: Verify sqlite-vec bundled SQLite version >= 3.50.2 (SEC-DEP-MED-5)
+**Phase 55**: Run `pnpm audit` and verify Baileys package integrity against supply chain attacks
 
-### Phase 37: Session Fork Raw Write (MEDIUM — SEC-R7-MED-2)
+### Phase 56: Session Error Message Redaction (MEDIUM — SEC-R8-MED-1)
 
-**File**: `src/auto-reply/reply/session-fork.ts:58` — Use `SessionManager` API or document why raw write is necessary with a safety comment.
+**File**: `src/auto-reply/reply/commands-export-session.ts:126,142` — Return generic error without filesystem path.
 
-**Commit**: `fix(sessions): use SessionManager for session fork header writes`
+**Commit**: `fix(agents): remove filesystem paths from session error messages`
 
-### Phase 38: Docker Sandbox Shell Fallback (MEDIUM — SEC-R7-MED-3)
+### Phase 57: Config Show Redaction (MEDIUM — SEC-R8-MED-2)
 
-**File**: `src/agents/sandbox/docker.ts:55-56,72-76` — Remove `shell: true` fallback or escape args for shell context on Windows.
+**File**: `src/auto-reply/reply/commands-config.ts:102-106` — Redact credential references, internal paths, and sensitive fields before displaying config. Restrict to DM-only or add explicit warning.
 
-**Commit**: `fix(agents): remove shell fallback in Docker sandbox spawn`
+**Commit**: `fix(gateway): redact sensitive fields in /config show output`
 
-### Phase 39: iMessage RPC Error Redaction (MEDIUM — SEC-R7-MED-4)
+### Phase 58: Debug Set Schema Validation (MEDIUM — SEC-R8-MED-3)
 
-*Covered by Phase 30.*
+**File**: `src/auto-reply/reply/commands-config.ts:246-264` — Apply `validateConfigObjectWithPlugins` validation to debug overrides, or restrict overridable paths to a safe allowlist.
 
-### Phase 40: System-Event Host/IP Validation (MEDIUM — SEC-R7-MED-5)
+**Commit**: `fix(gateway): validate /debug set overrides against config schema`
 
-**File**: `src/gateway/server-methods/system.ts:43-44,102-106` — Sanitize `host` and `ip` from client params (length limit, character allowlist).
+### Phase 59: Allowlist PII Masking (MEDIUM — SEC-R8-MED-4)
 
-**Commit**: `fix(gateway): validate system-event host and IP parameters`
+**File**: `src/commands/channels/status.ts:145` — Mask allowFrom entries (e.g., `+1***...789`) in status output. Show full values only with `--verbose` flag.
 
-### Phase 41: Synology TLS Default (MEDIUM — SEC-R7-MED-6)
+**Commit**: `fix(channels): mask allowlist entries in status output`
 
-**File**: `extensions/synology-chat/src/client.ts:46,96,126,201,240` — Change function signature defaults from `allowInsecureSsl = true` to `allowInsecureSsl = false`.
+### Phase 60: Provider Error + Cache Hardening (MEDIUM — SEC-R8-MED-5, R8-MED-6)
 
-**Commit**: `fix(synology-chat): default TLS verification to enabled`
+1. **`src/providers/qwen-portal-oauth.ts:36`**: Truncate response body; include only status code.
+2. **`src/providers/github-copilot-token.ts`**: Document plaintext cache as accepted risk (0o600 mitigates) or add encryption.
 
-### Phase 42: Synology PII (MEDIUM — SEC-R7-MED-7)
+**Commit**: `fix(providers): truncate OAuth error responses and document token cache`
 
-**File**: `extensions/synology-chat/src/webhook-handler.ts:304,311,330` — Redact `user_id` and remove message preview from info-level logs.
+### Phase 61: Skill Env Isolation (MEDIUM — SEC-R8-MED-7)
 
-**Commit**: `fix(synology-chat): redact user IDs and message content in logs`
+**File**: `src/agents/skills/env-overrides.ts:132-138` — Document concurrency limitation. Ensure all callers wrap reverter in `try/finally`. Consider passing env as `spawn` option instead of mutating global `process.env`.
 
-### Phase 43: Diffs CSS Injection (MEDIUM — SEC-R7-MED-8)
+**Commit**: `fix(agents): document and guard skill env override concurrency`
 
-**File**: `extensions/diffs/src/viewer-client.ts:230` — Sanitize `unsafeCSS` to only allow CSS custom properties or known-safe patterns.
+### Phase 62: Workspace Skills Trust (MEDIUM — SEC-R8-MED-8)
 
-**Commit**: `fix(diffs): sanitize CSS input in viewer payload`
+**File**: `src/agents/skills/workspace.ts:354-367` — Add warning log when loading skills from workspace directories. Consider first-run confirmation for non-bundled skills.
 
-### Phase 44: Extension SSRF Guards (MEDIUM — SEC-R7-MED-9, R7-MED-10)
+**Commit**: `fix(agents): warn when loading skills from untrusted workspace directories`
 
-**Files**: `extensions/mattermost/src/mattermost/client.ts`, `extensions/matrix/src/directory-live.ts`, `extensions/thread-ownership/index.ts` — Add SSRF guards (private IP checks) to configurable base URL fetches.
+### Phase 63: Error Redaction Consistency (MEDIUM — SEC-R8-MED-9, R8-MED-10)
 
-**Commit**: `fix(extensions): add SSRF guards to configurable base URL fetches`
+1. **`src/hooks/bundled/session-memory/handler.ts:325-326`**: Apply `redactSensitiveText` to stack traces in structured logs.
+2. **`src/commands/models/list.errors.ts:3-7`**: Wrap `formatErrorWithStack` output with `redactSensitiveText()`.
 
-### Phase 45: Zalouser File Permissions (MEDIUM — SEC-R7-MED-11)
+**Commit**: `fix(infra): apply redactSensitiveText to all error formatting paths`
 
-**File**: `extensions/zalouser/src/zalo-js.ts:374-391` — Add `{ mode: 0o600 }` to credential file writes.
+### Phase 64: Frontmatter Proto-Pollution Filter (MEDIUM — SEC-R8-MED-11)
 
-**Commit**: `fix(zalouser): set restrictive permissions on credential files`
+**File**: `src/markdown/frontmatter.ts:62` — Add `isBlockedObjectKey(rawKey)` check before writing to result object.
 
-### Phase 46: Gateway HTTP API Hardening (MEDIUM — SEC-R7-MED-12, R7-MED-13, R7-MED-14)
+**Commit**: `fix(infra): add prototype pollution guard to YAML frontmatter parsing`
 
-1. **`src/gateway/openai-http.ts:127`**: Document `senderIsOwner: true` as intentional for current auth model; add TODO for role-based scoping.
-2. **`src/gateway/control-ui-csp.ts:14-15`**: Remove `ws:` from `connect-src` (require `wss:` only). Restrict `img-src` to `'self' data:` (remove `https:` wildcard).
-3. **`src/gateway/hooks-mapping.ts:94`**: Add startup warning when `allowUnsafeExternalContent` is enabled.
+### Phase 65: JSON.parse Safety + Browser Error (MEDIUM — SEC-R8-MED-12, R8-MED-13, R8-MED-14)
 
-**Commit**: `fix(gateway): tighten CSP and document API auth scope`
+1. **`src/infra/outbound/delivery-queue.ts:131`**, **`src/discord/api.ts:25`**, **`src/infra/outbound/tool-payload.ts:19`**: Wrap `JSON.parse` in try/catch.
+2. **`src/browser/server-context.ts:207,210`**: Return generic error messages in HTTP responses.
+3. **`src/config/sessions/store.ts:223-249`**: Document POSIX atomicity requirement or add retry logic.
 
-### Phase 47: Device Identity + Relay Auth (MEDIUM — SEC-R7-MED-15, R7-MED-16)
-
-1. **`src/infra/device-identity.ts:24-26`**: Add `{ mode: 0o700 }` to `mkdirSync` options.
-2. **`src/browser/extension-relay-auth.ts:78`**: Replace `===` with `safeEqualSecret()`. *(Relay auth also covered in Phase 33)*
-
-**Commit**: `fix(infra): set explicit directory permissions for device identity`
+**Commit**: `fix(infra): guard JSON.parse and sanitize HTTP error responses`
 
 ---
 
@@ -463,18 +486,20 @@ The codebase demonstrates mature security practices confirmed across multiple au
 | Priority | Phases | Severity | Category |
 |----------|--------|----------|----------|
 | P0 | 8 | CRITICAL | WebSocket MitM |
-| P1 | 17, 16, 33 | HIGH | SSRF consistency, plugin auth, timing attacks |
+| P1 | 17+50, 16, 33 | HIGH | SSRF consistency, plugin auth, timing attacks |
 | P1 | 1, 28, 29, 30 | HIGH | PII in all core channels |
-| P1 | 9, 31 | HIGH | Session isolation, client credential storage |
-| P1 | 2, 10 | HIGH | Log API, browser tool |
+| P1 | 9, 31, 48, 49 | HIGH | Session isolation, path traversal, SCP injection |
+| P1 | 2, 10, 52 | HIGH | Log API, browser tool, canvas CSP |
 | P1 | 18, 19 | HIGH | pnpm + Node.js upgrades |
-| P1 | 32, 34, 35 | HIGH | CSRF, tlon injection, voice transcripts |
+| P1 | 32, 34, 35, 51, 53 | HIGH | CSRF, tlon injection, Copilot URL, ReDoS |
 | P2 | 15, 6, 13 | MEDIUM | Log injection, path traversal, recursion |
 | P2 | 20, 23, 25, 26, 38 | MEDIUM | Vite, TOCTOU, RegExp, shell injection |
-| P2 | 3, 4, 41, 42 | MEDIUM | Channel PII (LINE, Discord, Synology) |
+| P2 | 3, 4, 41, 42, 59 | MEDIUM | Channel PII (LINE, Discord, Synology, allowlist) |
+| P2 | 56-58, 61-62 | MEDIUM | Error disclosure, config exposure, skills trust |
 | P3 | 5, 7, 11-14 | MEDIUM | Info disclosure, config hardening |
 | P3 | 21-22, 24, 27 | MEDIUM | Input validation, defense-in-depth |
 | P3 | 37, 40, 43-47 | MEDIUM | Session fork, system events, extensions |
+| P3 | 60, 63-65 | MEDIUM | Provider errors, error redaction, JSON.parse |
 
 ---
 
@@ -486,7 +511,8 @@ The codebase demonstrates mature security practices confirmed across multiple au
 | SEC-R5-LOW-1–4 | Plugin integrity, rate limiter, Firecrawl, healthz | By design |
 | SEC-R6-LOW-1–6 | Temp files, auto-load, Windows, MediaFetchError, Math.random, media server | Mitigated by existing controls |
 | SEC-R7-LOW-1–7 | Voice metadata, pairing logs, OAuth IDs, Gemini CLI, rate limit, auth JSON, memory zeroing | Low risk / platform limitation |
-| SEC-DEP-MED-2–4 | protobufjs, chalk, @discordjs/opus | Verify-only; likely not affected |
+| SEC-R8-LOW-1–4 | Canvas innerHTML (non-user), Slack duplicate path, session memory path, OAuth client IDs | Low risk / by design |
+| SEC-DEP-MED-2–5 | protobufjs, chalk, @discordjs/opus, sqlite-vec | Verify-only; likely not affected |
 
 ---
 
@@ -495,11 +521,15 @@ The codebase demonstrates mature security practices confirmed across multiple au
 1. **CLAUDE.md**: Add "ALWAYS use `redactIdentifier()` when logging user identifiers across ALL channels"
 2. **CLAUDE.md**: Add "ALWAYS use `fetchWithSsrFGuard` for any outbound HTTP with configurable base URLs"
 3. **CLAUDE.md**: Add "ALWAYS use `safeEqualSecret()` for any secret/token comparison — never `===` or `!==`"
-4. **Defense-in-depth**: `logs.tail` redaction (Phase 2) catches PII leaks from any channel
-5. **Custom lint rule**: Flag identifier variables in template literals within log calls
-6. **Dependency hygiene**: Run `pnpm audit` in CI; maintain override discipline
-7. **Plugin security**: Default `auth: "required"` for plugin HTTP routes
-8. **Client storage**: Establish pattern for encrypted or session-scoped credential storage in UI
+4. **CLAUDE.md**: Add "ALWAYS use `compileSafeRegex()` when compiling regex from config/user input"
+5. **CLAUDE.md**: Add "NEVER return `err.message` or `err.stack` in HTTP responses — use generic messages"
+6. **Defense-in-depth**: `logs.tail` redaction (Phase 2) catches PII leaks from any channel
+7. **Custom lint rule**: Flag identifier variables in template literals within log calls
+8. **Custom lint rule**: Flag `new RegExp()` calls not using `compileSafeRegex`
+9. **Dependency hygiene**: Run `pnpm audit` in CI; maintain override discipline
+10. **Plugin security**: Default `auth: "required"` for plugin HTTP routes
+11. **Client storage**: Establish pattern for encrypted or session-scoped credential storage in UI
+12. **Canvas security**: Establish CSP header standard for all HTML-serving endpoints
 
 ---
 
@@ -520,7 +550,7 @@ After all phases:
 
 ---
 
-## Commit Strategy (47 phases, ~35 commits after merging related phases)
+## Commit Strategy (65 phases, ~45 commits after merging related phases)
 
 | # | Scope | Finding(s) | Files |
 |---|-------|-----------|-------|
@@ -540,7 +570,7 @@ After all phases:
 | 14 | `fix(gateway)` | R5-MED-4 | 1 source |
 | 15 | `fix(gateway)` | R5-MED-5 | 1 source |
 | 16 | `fix(gateway)` | R6-HIGH-1 | 2 source |
-| 17 | `fix(agents)` | R6-HIGH-2,3,4 | 3 source |
+| 17 | `fix(agents)` | R6-HIGH-2,3,4 + R8-HIGH-3 | 4 source |
 | 18 | `fix(deps)` | DEP-HIGH-1 | 1 source |
 | 19 | `fix(infra)` | DEP-HIGH-2 | 2 source |
 | 20 | `fix(ui)` | DEP-MED-1 | 1 source |
@@ -568,8 +598,20 @@ After all phases:
 | 42 | `fix(zalouser)` | R7-MED-11 | 1 source |
 | 43 | `fix(gateway)` | R7-MED-12,13,14 | 3 source |
 | 44 | `fix(infra)` | R7-MED-15 | 1 source |
+| 45 | `fix(agents)` | R8-HIGH-1 | 1 source |
+| 46 | `fix(agents)` | R8-HIGH-2 | 1 source |
+| 47 | `fix(providers)` | R8-HIGH-4 | 1 source |
+| 48 | `fix(canvas)` | R8-HIGH-5 | 1 source |
+| 49 | `fix(agents)` | R8-HIGH-6 | 1 source |
+| 50 | `fix(agents)` | R8-MED-1 | 1 source |
+| 51 | `fix(gateway)` | R8-MED-2,3 | 1 source |
+| 52 | `fix(channels)` | R8-MED-4 | 1 source |
+| 53 | `fix(providers)` | R8-MED-5,6 | 2 source |
+| 54 | `fix(agents)` | R8-MED-7,8 | 2 source |
+| 55 | `fix(infra)` | R8-MED-9,10,11 | 3 source |
+| 56 | `fix(infra)` | R8-MED-12,13,14 | 4 source |
 
-**Total**: ~55 source files, ~10-12 test files
+**Total**: ~70 source files, ~10-12 test files
 
 ---
 
@@ -577,7 +619,7 @@ After all phases:
 
 | # | Agent Type | Round | Purpose | Findings |
 |---|-----------|-------|---------|----------|
-| 1 | `security-auditor` | 5 | Round 5 codebase audit | 1C, 1H, 5M, 4L |
+| 1 | `security-auditor` | 5 | Core codebase audit | 1C, 1H, 5M, 4L |
 | 2 | `planner` | 5 | Remediation plan (Rounds 1-4) | Plan output |
 | 3 | `Explore` | 5 | Round 5 detail gathering | Line verification |
 | 4 | `security-auditor` | 6 | Completeness verification | 13 missing instances |
@@ -588,4 +630,25 @@ After all phases:
 | 9 | `security-auditor` | 7 | Extension plugins (42 packages) | 3H, 7M, 7L |
 | 10 | `security-auditor` | 7 | Secrets, crypto, auth flows | 2H, 5M, 13L |
 | 11 | `security-auditor` | 7 | Web UI, protocol, HTTP endpoints | 3H, 5M, 12L |
-| 12 | `general-purpose` | 7 | Final web research (long-tail CVEs) | Updates + product CVE history |
+| 12 | `general-purpose` | 7 | Long-tail CVEs + product CVE history | Updates + 20+ CVE confirmations |
+| 13 | `security-auditor` | 8 | CLI commands, auto-reply pipeline | 2H, 5M, 10L |
+| 14 | `security-auditor` | 8 | Providers, config/sessions, secrets | 2H, 3M, 3L |
+| 15 | `security-auditor` | 8 | Slack HTTP, canvas host, skills/tools | 2H, 4M, 12L |
+| 16 | `security-auditor` | 8 | Deserialization, errors, regex, TOCTOU | 2H, 6M, 4L |
+| 17 | `general-purpose` | 8 | Web research (Grammy, Baileys, Express, supply chain) | 30+ CVE product updates, supply chain alerts |
+| — | `Explore` | 6 | Completeness verification | Instance count updates |
+
+**Total: 18 agents** (all complete)
+
+---
+
+## Diminishing Returns Analysis
+
+| Round | New CRIT | New HIGH | New MED | New LOW | Pattern |
+|-------|----------|----------|---------|---------|---------|
+| 1-5 | 1 | 5 | 12 | 4 | Core architecture issues |
+| 6 | 0 | 5 | 8 | 6 | SSRF consistency, deps |
+| 7 | 0 | 10 | 11 | 7 | Remaining channels, extensions, UI |
+| 8 | 0 | 6 | 10 | 4 | CLI, providers, canvas, cross-cutting |
+
+Round 8 found **zero new CRITICALs**. The 6 HIGHs are in previously unexplored areas (SCP media staging, session export command, provider discovery, Copilot URL derivation, canvas host, mention regex). These are progressively more niche attack surfaces requiring more specific access conditions (authorized user, config write, MITM position).
