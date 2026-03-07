@@ -25,6 +25,7 @@ import type {
 } from "../config/types.js";
 import { danger, logVerbose, warn } from "../globals.js";
 import { enqueueSystemEvent } from "../infra/system-events.js";
+import { redactIdentifier } from "../logging/redact-identifier.js";
 import { MediaFetchError } from "../media/fetch.js";
 import { readChannelAllowFromStore } from "../pairing/pairing-store.js";
 import { resolveAgentRoute } from "../routing/resolve-route.js";
@@ -521,17 +522,17 @@ export const registerTelegramHandlers = ({
     });
     if (!baseAccess.allowed) {
       if (baseAccess.reason === "group-disabled") {
-        logVerbose(`Blocked telegram group ${chatId} (group disabled)`);
+        logVerbose(`Blocked telegram group ${redactIdentifier(String(chatId))} (group disabled)`);
         return true;
       }
       if (baseAccess.reason === "topic-disabled") {
         logVerbose(
-          `Blocked telegram topic ${chatId} (${resolvedThreadId ?? "unknown"}) (topic disabled)`,
+          `Blocked telegram topic ${redactIdentifier(String(chatId))} (${resolvedThreadId ?? "unknown"}) (topic disabled)`,
         );
         return true;
       }
       logVerbose(
-        `Blocked telegram group sender ${senderId || "unknown"} (group allowFrom override)`,
+        `Blocked telegram group sender ${redactIdentifier(senderId || "unknown")} (group allowFrom override)`,
       );
       return true;
     }
@@ -572,7 +573,9 @@ export const registerTelegramHandlers = ({
         return true;
       }
       if (policyAccess.reason === "group-policy-allowlist-unauthorized") {
-        logVerbose(`Blocked telegram group message from ${senderId} (groupPolicy: allowlist)`);
+        logVerbose(
+          `Blocked telegram group message from ${redactIdentifier(senderId)} (groupPolicy: allowlist)`,
+        );
         return true;
       }
       logger.info({ chatId, title: chatTitle, reason: "not-allowed" }, "skipping group message");
@@ -705,14 +708,18 @@ export const registerTelegramHandlers = ({
           dmPolicy,
         });
         if (!isAllowlistAuthorized(effectiveDmAllow, senderId, senderUsername)) {
-          logVerbose(`Blocked telegram direct sender ${senderId || "unknown"} (${deniedDmReason})`);
+          logVerbose(
+            `Blocked telegram direct sender ${redactIdentifier(senderId || "unknown")} (${deniedDmReason})`,
+          );
           return { allowed: false, reason: "direct-unauthorized" };
         }
       }
     }
     if (isGroup && enforceGroupAllowlistAuthorization) {
       if (!isAllowlistAuthorized(effectiveGroupAllow, senderId, senderUsername)) {
-        logVerbose(`Blocked telegram group sender ${senderId || "unknown"} (${deniedGroupReason})`);
+        logVerbose(
+          `Blocked telegram group sender ${redactIdentifier(senderId || "unknown")} (${deniedGroupReason})`,
+        );
         return { allowed: false, reason: "group-unauthorized" };
       }
     }

@@ -63,6 +63,26 @@ export function resolveAgentIdForRequest(params: {
   return fromModel ?? "main";
 }
 
+/** Maximum length for externally-provided session keys. */
+const SESSION_KEY_MAX_LENGTH = 512;
+
+/** Pattern for safe session key characters (alphanumeric, hyphens, underscores, colons, dots, slashes). */
+const SESSION_KEY_SAFE_RE = /^[a-zA-Z0-9_:.\-/]+$/;
+
+function sanitizeSessionKey(raw: string): string | undefined {
+  if (raw.length > SESSION_KEY_MAX_LENGTH) {
+    return undefined;
+  }
+  if (!SESSION_KEY_SAFE_RE.test(raw)) {
+    return undefined;
+  }
+  // Reject path traversal attempts.
+  if (raw.includes("..")) {
+    return undefined;
+  }
+  return raw;
+}
+
 export function resolveSessionKey(params: {
   req: IncomingMessage;
   agentId: string;
@@ -71,7 +91,11 @@ export function resolveSessionKey(params: {
 }): string {
   const explicit = getHeader(params.req, "x-openclaw-session-key")?.trim();
   if (explicit) {
-    return explicit;
+    const sanitized = sanitizeSessionKey(explicit);
+    if (sanitized) {
+      return sanitized;
+    }
+    // Fall through to generate a new session key if the provided one is invalid.
   }
 
   const user = params.user?.trim();

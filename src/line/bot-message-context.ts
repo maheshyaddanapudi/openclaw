@@ -7,6 +7,7 @@ import { recordInboundSession } from "../channels/session.js";
 import type { OpenClawConfig } from "../config/config.js";
 import { logVerbose, shouldLogVerbose } from "../globals.js";
 import { recordChannelActivity } from "../infra/channel-activity.js";
+import { redactIdentifier } from "../logging/redact-identifier.js";
 import { resolveAgentRoute } from "../routing/resolve-route.js";
 import { resolvePinnedMainDmOwnerFromAllowlist } from "../security/dm-policy-shared.js";
 import { normalizeAllowFrom } from "./bot-access.js";
@@ -334,7 +335,7 @@ async function finalizeLineInboundContext(params: {
                   senderRecipient: params.source.userId,
                   onSkip: ({ ownerRecipient, senderRecipient }) => {
                     logVerbose(
-                      `line: skip main-session last route for ${senderRecipient} (pinned owner ${ownerRecipient})`,
+                      `line: skip main-session last route for ${redactIdentifier(senderRecipient)} (pinned owner ${redactIdentifier(ownerRecipient)})`,
                     );
                   },
                 }
@@ -354,7 +355,7 @@ async function finalizeLineInboundContext(params: {
         : "";
     const label = params.verboseLog.kind === "inbound" ? "line inbound" : "line postback";
     logVerbose(
-      `${label}: from=${ctxPayload.From} len=${body.length}${mediaInfo} preview="${preview}"`,
+      `${label}: from=${redactIdentifier(ctxPayload.From)} len=${body.length}${mediaInfo} preview="${preview}"`,
     );
   }
 

@@ -18,7 +18,7 @@ function normalizeCapability(raw: string | null | undefined): string | undefined
 }
 
 export function mintCanvasCapabilityToken(): string {
-  return randomBytes(18).toString("base64url");
+  return randomBytes(32).toString("base64url");
 }
 
 export function buildCanvasScopedHostUrl(baseUrl: string, capability: string): string | undefined {

@@ -19,6 +19,13 @@ import type { MsgContext, TemplateContext } from "../templating.js";
 
 const STAGED_MEDIA_MAX_BYTES = MEDIA_MAX_BYTES;
 
+/**
+ * Only allow alphanumeric characters, hyphens, underscores, dots, and forward
+ * slashes in remote paths passed to SCP. This prevents shell metacharacter
+ * injection (backticks, semicolons, pipes, dollar signs, newlines, etc.).
+ */
+const SAFE_REMOTE_PATH_RE = /^[a-zA-Z0-9_./-]+$/;
+
 export async function stageSandboxMedia(params: {
   ctx: MsgContext;
   sessionCtx: TemplateContext;
@@ -292,6 +299,10 @@ async function scpFile(remoteHost: string, remotePath: string, localPath: string
   const safeRemoteHost = normalizeScpRemoteHost(remoteHost);
   if (!safeRemoteHost) {
     throw new Error("invalid remote host for SCP");
+  }
+  // Reject remote paths containing shell metacharacters to prevent command injection.
+  if (!SAFE_REMOTE_PATH_RE.test(remotePath)) {
+    throw new Error("remote path contains unsafe characters");
   }
   return new Promise((resolve, reject) => {
     const child = spawn(

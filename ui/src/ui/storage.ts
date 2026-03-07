@@ -1,3 +1,6 @@
+// SECURITY: local storage is used for local-only gateway control;
+// not suitable for multi-tenant deployments.
+
 const KEY = "openclaw.control.settings.v1";
 
 import { isSupportedLocale } from "../i18n/index.ts";

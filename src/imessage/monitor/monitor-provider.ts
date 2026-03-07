@@ -24,6 +24,7 @@ import { readSessionUpdatedAt, resolveStorePath } from "../../config/sessions.js
 import { danger, logVerbose, shouldLogVerbose, warn } from "../../globals.js";
 import { normalizeScpRemoteHost } from "../../infra/scp-host.js";
 import { waitForTransportReady } from "../../infra/transport-ready.js";
+import { redactIdentifier } from "../../logging/redact-identifier.js";
 import {
   isInboundPathAllowed,
   resolveIMessageAttachmentRoots,
@@ -273,7 +274,7 @@ export async function monitorIMessageProvider(opts: MonitorIMessageOpts = {}): P
         },
       });
       if (created) {
-        logVerbose(`imessage pairing request sender=${decision.senderId}`);
+        logVerbose(`imessage pairing request sender=${redactIdentifier(decision.senderId)}`);
         try {
           await sendMessageIMessage(
             sender,
@@ -290,7 +291,9 @@ export async function monitorIMessageProvider(opts: MonitorIMessageOpts = {}): P
             },
           );
         } catch (err) {
-          logVerbose(`imessage pairing reply failed for ${decision.senderId}: ${String(err)}`);
+          logVerbose(
+            `imessage pairing reply failed for ${redactIdentifier(decision.senderId)}: ${String(err)}`,
+          );
         }
       }
       return;
@@ -343,7 +346,7 @@ export async function monitorIMessageProvider(opts: MonitorIMessageOpts = {}): P
                       senderRecipient: decision.senderNormalized,
                       onSkip: ({ ownerRecipient, senderRecipient }) => {
                         logVerbose(
-                          `imessage: skip main-session last route for ${senderRecipient} (pinned owner ${ownerRecipient})`,
+                          `imessage: skip main-session last route for ${redactIdentifier(senderRecipient)} (pinned owner ${redactIdentifier(ownerRecipient)})`,
                         );
                       },
                     }
@@ -358,7 +361,7 @@ export async function monitorIMessageProvider(opts: MonitorIMessageOpts = {}): P
     if (shouldLogVerbose()) {
       const preview = truncateUtf16Safe(String(ctxPayload.Body ?? ""), 200).replace(/\n/g, "\\n");
       logVerbose(
-        `imessage inbound: chatId=${chatId ?? "unknown"} from=${ctxPayload.From} len=${
+        `imessage inbound: chatId=${chatId ?? "unknown"} from=${redactIdentifier(ctxPayload.From)} len=${
           String(ctxPayload.Body ?? "").length
         } preview="${preview}"`,
       );

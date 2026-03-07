@@ -43,6 +43,7 @@ import type {
 import { logVerbose, shouldLogVerbose } from "../globals.js";
 import { recordChannelActivity } from "../infra/channel-activity.js";
 import { getSessionBindingService } from "../infra/outbound/session-binding-service.js";
+import { redactIdentifier } from "../logging/redact-identifier.js";
 import {
   buildAgentSessionKey,
   pickFirstExistingAgentId,
@@ -329,19 +330,19 @@ export const buildTelegramMessageContext = async ({
   });
   if (!baseAccess.allowed) {
     if (baseAccess.reason === "group-disabled") {
-      logVerbose(`Blocked telegram group ${chatId} (group disabled)`);
+      logVerbose(`Blocked telegram group ${redactIdentifier(String(chatId))} (group disabled)`);
       return null;
     }
     if (baseAccess.reason === "topic-disabled") {
       logVerbose(
-        `Blocked telegram topic ${chatId} (${resolvedThreadId ?? "unknown"}) (topic disabled)`,
+        `Blocked telegram topic ${redactIdentifier(String(chatId))} (${resolvedThreadId ?? "unknown"}) (topic disabled)`,
       );
       return null;
     }
     logVerbose(
       isGroup
-        ? `Blocked telegram group sender ${senderId || "unknown"} (group allowFrom override)`
-        : `Blocked telegram DM sender ${senderId || "unknown"} (DM allowFrom override)`,
+        ? `Blocked telegram group sender ${redactIdentifier(senderId || "unknown")} (group allowFrom override)`
+        : `Blocked telegram DM sender ${redactIdentifier(senderId || "unknown")} (DM allowFrom override)`,
     );
     return null;
   }
@@ -349,7 +350,9 @@ export const buildTelegramMessageContext = async ({
   const requireTopic = (groupConfig as TelegramDirectConfig | undefined)?.requireTopic;
   const topicRequiredButMissing = !isGroup && requireTopic === true && dmThreadId == null;
   if (topicRequiredButMissing) {
-    logVerbose(`Blocked telegram DM ${chatId}: requireTopic=true but no topic present`);
+    logVerbose(
+      `Blocked telegram DM ${redactIdentifier(String(chatId))}: requireTopic=true but no topic present`,
+    );
     return null;
   }
 
@@ -377,7 +380,9 @@ export const buildTelegramMessageContext = async ({
           ),
       });
     } catch (err) {
-      logVerbose(`telegram record_voice cue failed for chat ${chatId}: ${String(err)}`);
+      logVerbose(
+        `telegram record_voice cue failed for chat ${redactIdentifier(String(chatId))}: ${String(err)}`,
+      );
     }
   };
 
@@ -687,7 +692,7 @@ export const buildTelegramMessageContext = async ({
                     getChat: getChatApi ?? undefined,
                   }).catch((err) => {
                     logVerbose(
-                      `telegram status-reaction available_reactions lookup failed for chat ${chatId}: ${String(err)}`,
+                      `telegram status-reaction available_reactions lookup failed for chat ${redactIdentifier(String(chatId))}: ${String(err)}`,
                     );
                     return null;
                   });
@@ -712,7 +717,9 @@ export const buildTelegramMessageContext = async ({
           emojis: resolvedStatusReactionEmojis,
           timing: statusReactionsConfig?.timing,
           onError: (err) => {
-            logVerbose(`telegram status-reaction error for chat ${chatId}: ${String(err)}`);
+            logVerbose(
+              `telegram status-reaction error for chat ${redactIdentifier(String(chatId))}: ${String(err)}`,
+            );
           },
         })
       : null;
@@ -732,7 +739,9 @@ export const buildTelegramMessageContext = async ({
         }).then(
           () => true,
           (err) => {
-            logVerbose(`telegram react failed for chat ${chatId}: ${String(err)}`);
+            logVerbose(
+              `telegram react failed for chat ${redactIdentifier(String(chatId))}: ${String(err)}`,
+            );
             return false;
           },
         )
@@ -948,7 +957,7 @@ export const buildTelegramMessageContext = async ({
     const mediaInfo = allMedia.length > 1 ? ` mediaCount=${allMedia.length}` : "";
     const topicInfo = resolvedThreadId != null ? ` topic=${resolvedThreadId}` : "";
     logVerbose(
-      `telegram inbound: chatId=${chatId} from=${ctxPayload.From} len=${body.length}${mediaInfo}${topicInfo} preview="${preview}"`,
+      `telegram inbound: chatId=${redactIdentifier(String(chatId))} from=${redactIdentifier(ctxPayload.From)} len=${body.length}${mediaInfo}${topicInfo} preview="${preview}"`,
     );
   }
 

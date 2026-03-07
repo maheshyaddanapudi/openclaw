@@ -11,6 +11,7 @@ import {
 import type { SignalReactionNotificationMode } from "../config/types.js";
 import type { BackoffPolicy } from "../infra/backoff.js";
 import { waitForTransportReady } from "../infra/transport-ready.js";
+import { redactIdentifier } from "../logging/redact-identifier.js";
 import { saveMediaBuffer } from "../media/store.js";
 import { createNonExitingRuntime, type RuntimeEnv } from "../runtime.js";
 import { normalizeStringEntries } from "../shared/string-normalization.js";
@@ -320,7 +321,7 @@ async function deliverReplies(params: {
         });
       }
     }
-    runtime.log?.(`delivered reply to ${target}`);
+    runtime.log?.(`delivered reply to ${redactIdentifier(target)}`);
   }
 }
 

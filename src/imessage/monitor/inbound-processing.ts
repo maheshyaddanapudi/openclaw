@@ -19,6 +19,7 @@ import {
   resolveChannelGroupPolicy,
   resolveChannelGroupRequireMention,
 } from "../../config/group-policy.js";
+import { redactIdentifier } from "../../logging/redact-identifier.js";
 import { resolveAgentRoute } from "../../routing/resolve-route.js";
 import {
   DM_GROUP_ACCESS_REASON,
@@ -175,7 +176,9 @@ export function resolveIMessageInboundDecision(params: {
         return { kind: "drop", reason: "groupPolicy allowlist (empty groupAllowFrom)" };
       }
       if (accessDecision.reasonCode === DM_GROUP_ACCESS_REASON.GROUP_POLICY_NOT_ALLOWLISTED) {
-        params.logVerbose?.(`Blocked iMessage sender ${sender} (not in groupAllowFrom)`);
+        params.logVerbose?.(
+          `Blocked iMessage sender ${redactIdentifier(sender)} (not in groupAllowFrom)`,
+        );
         return { kind: "drop", reason: "not in groupAllowFrom" };
       }
       params.logVerbose?.(`Blocked iMessage group message (${accessDecision.reason})`);
@@ -187,7 +190,9 @@ export function resolveIMessageInboundDecision(params: {
     if (accessDecision.decision === "pairing") {
       return { kind: "pairing", senderId: senderNormalized };
     }
-    params.logVerbose?.(`Blocked iMessage sender ${sender} (dmPolicy=${params.dmPolicy})`);
+    params.logVerbose?.(
+      `Blocked iMessage sender ${redactIdentifier(sender)} (dmPolicy=${params.dmPolicy})`,
+    );
     return { kind: "drop", reason: "dmPolicy blocked" };
   }
 

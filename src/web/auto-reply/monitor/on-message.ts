@@ -2,6 +2,7 @@ import type { getReplyFromConfig } from "../../../auto-reply/reply.js";
 import type { MsgContext } from "../../../auto-reply/templating.js";
 import { loadConfig } from "../../../config/config.js";
 import { logVerbose } from "../../../globals.js";
+import { redactIdentifier } from "../../../logging/redact-identifier.js";
 import { resolveAgentRoute } from "../../../routing/resolve-route.js";
 import { buildGroupHistoryKey } from "../../../routing/session-key.js";
 import { normalizeE164 } from "../../../utils.js";
@@ -85,7 +86,7 @@ export function createWebOnMessageHandler(params: {
 
     // Same-phone mode logging retained
     if (msg.from === msg.to) {
-      logVerbose(`📱 Same-phone mode detected (from === to: ${msg.from})`);
+      logVerbose(`Same-phone mode detected (from === to: ${redactIdentifier(msg.from)})`);
     }
 
     // Skip if this is a message we just sent (echo detection)

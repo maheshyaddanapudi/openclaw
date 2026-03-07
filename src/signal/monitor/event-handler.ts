@@ -29,6 +29,7 @@ import { resolveChannelGroupRequireMention } from "../../config/group-policy.js"
 import { readSessionUpdatedAt, resolveStorePath } from "../../config/sessions.js";
 import { danger, logVerbose, shouldLogVerbose } from "../../globals.js";
 import { enqueueSystemEvent } from "../../infra/system-events.js";
+import { redactIdentifier } from "../../logging/redact-identifier.js";
 import { kindFromMime } from "../../media/mime.js";
 import { resolveAgentRoute } from "../../routing/resolve-route.js";
 import {
@@ -200,7 +201,7 @@ export function createSignalEventHandler(deps: SignalEventHandlerDeps) {
                 senderRecipient: entry.senderRecipient,
                 onSkip: ({ ownerRecipient, senderRecipient }) => {
                   logVerbose(
-                    `signal: skip main-session last route for ${senderRecipient} (pinned owner ${ownerRecipient})`,
+                    `signal: skip main-session last route for ${redactIdentifier(senderRecipient)} (pinned owner ${redactIdentifier(ownerRecipient)})`,
                   );
                 },
               };
@@ -214,7 +215,9 @@ export function createSignalEventHandler(deps: SignalEventHandlerDeps) {
 
     if (shouldLogVerbose()) {
       const preview = body.slice(0, 200).replace(/\\n/g, "\\\\n");
-      logVerbose(`signal inbound: from=${ctxPayload.From} len=${body.length} preview="${preview}"`);
+      logVerbose(
+        `signal inbound: from=${redactIdentifier(ctxPayload.From)} len=${body.length} preview="${preview}"`,
+      );
     }
 
     const { onModelSelected, ...prefixOptions } = createReplyPrefixOptions({
@@ -368,7 +371,7 @@ export function createSignalEventHandler(deps: SignalEventHandlerDeps) {
     const reactionAccess = params.resolveAccessDecision(isGroup);
     if (reactionAccess.decision !== "allow") {
       logVerbose(
-        `Blocked signal reaction sender ${params.senderDisplay} (${reactionAccess.reason})`,
+        `Blocked signal reaction sender ${redactIdentifier(params.senderDisplay)} (${reactionAccess.reason})`,
       );
       return true;
     }
@@ -552,7 +555,9 @@ export function createSignalEventHandler(deps: SignalEventHandlerDeps) {
         } else if (groupAccess.reasonCode === DM_GROUP_ACCESS_REASON.GROUP_POLICY_EMPTY_ALLOWLIST) {
           logVerbose("Blocked signal group message (groupPolicy: allowlist, no groupAllowFrom)");
         } else {
-          logVerbose(`Blocked signal group sender ${senderDisplay} (not in groupAllowFrom)`);
+          logVerbose(
+            `Blocked signal group sender ${redactIdentifier(senderDisplay)} (not in groupAllowFrom)`,
+          );
         }
         return;
       }
@@ -702,7 +707,9 @@ export function createSignalEventHandler(deps: SignalEventHandlerDeps) {
           accountId: deps.accountId,
         });
       } catch (err) {
-        logVerbose(`signal read receipt failed for ${senderDisplay}: ${String(err)}`);
+        logVerbose(
+          `signal read receipt failed for ${redactIdentifier(senderDisplay)}: ${String(err)}`,
+        );
       }
     } else if (
       deps.sendReadReceipts &&
@@ -710,7 +717,9 @@ export function createSignalEventHandler(deps: SignalEventHandlerDeps) {
       !isGroup &&
       !receiptTimestamp
     ) {
-      logVerbose(`signal read receipt skipped (missing timestamp) for ${senderDisplay}`);
+      logVerbose(
+        `signal read receipt skipped (missing timestamp) for ${redactIdentifier(senderDisplay)}`,
+      );
     }
 
     const senderName = envelope.sourceName ?? senderDisplay;

@@ -1,9 +1,12 @@
 import type { User } from "@buape/carbon";
+import { redactIdentifier } from "../../logging/redact-identifier.js";
 import type { PluralKitMessageInfo } from "../pluralkit.js";
 import { formatDiscordUserTag } from "./format.js";
 
 export type DiscordSenderIdentity = {
   id: string;
+  /** Hashed version of `id` safe for inclusion in LLM context. */
+  redactedId: string;
   name?: string;
   tag?: string;
   label: string;
@@ -43,6 +46,7 @@ export function resolveDiscordSenderIdentity(params: {
     const label = systemName ? `${memberName} (PK:${systemName})` : `${memberName} (PK)`;
     return {
       id: memberId,
+      redactedId: redactIdentifier(memberId),
       name: memberName,
       tag: pkMember?.name?.trim() || undefined,
       label,
@@ -65,6 +69,7 @@ export function resolveDiscordSenderIdentity(params: {
       : (senderDisplay ?? senderTag ?? params.author.id);
   return {
     id: params.author.id,
+    redactedId: redactIdentifier(params.author.id),
     name: params.author.username ?? undefined,
     tag: senderTag,
     label: senderLabel,

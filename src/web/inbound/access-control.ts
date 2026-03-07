@@ -5,6 +5,7 @@ import {
   warnMissingProviderGroupPolicyFallbackOnce,
 } from "../../config/runtime-group-policy.js";
 import { logVerbose } from "../../globals.js";
+import { redactIdentifier } from "../../logging/redact-identifier.js";
 import { buildPairingReply } from "../../pairing/pairing-messages.js";
 import { upsertChannelPairingRequest } from "../../pairing/pairing-store.js";
 import {
@@ -135,7 +136,7 @@ export async function checkInboundAccessControl(params: {
       logVerbose("Blocked group message (groupPolicy: allowlist, no groupAllowFrom)");
     } else {
       logVerbose(
-        `Blocked group message from ${params.senderE164 ?? "unknown sender"} (groupPolicy: allowlist)`,
+        `Blocked group message from ${redactIdentifier(params.senderE164 ?? "unknown sender")} (groupPolicy: allowlist)`,
       );
     }
     return {
@@ -169,7 +170,7 @@ export async function checkInboundAccessControl(params: {
     if (access.decision === "pairing" && !isSamePhone) {
       const candidate = params.from;
       if (suppressPairingReply) {
-        logVerbose(`Skipping pairing reply for historical DM from ${candidate}.`);
+        logVerbose(`Skipping pairing reply for historical DM from ${redactIdentifier(candidate)}.`);
       } else {
         const { code, created } = await upsertChannelPairingRequest({
           channel: "whatsapp",
@@ -179,7 +180,7 @@ export async function checkInboundAccessControl(params: {
         });
         if (created) {
           logVerbose(
-            `whatsapp pairing request sender=${candidate} name=${params.pushName ?? "unknown"}`,
+            `whatsapp pairing request sender=${redactIdentifier(candidate)} name=${params.pushName ?? "unknown"}`,
           );
           try {
             await params.sock.sendMessage(params.remoteJid, {
@@ -190,7 +191,9 @@ export async function checkInboundAccessControl(params: {
               }),
             });
           } catch (err) {
-            logVerbose(`whatsapp pairing reply failed for ${candidate}: ${String(err)}`);
+            logVerbose(
+              `whatsapp pairing reply failed for ${redactIdentifier(candidate)}: ${String(err)}`,
+            );
           }
         }
       }
@@ -202,7 +205,9 @@ export async function checkInboundAccessControl(params: {
       };
     }
     if (access.decision !== "allow") {
-      logVerbose(`Blocked unauthorized sender ${params.from} (dmPolicy=${dmPolicy})`);
+      logVerbose(
+        `Blocked unauthorized sender ${redactIdentifier(params.from)} (dmPolicy=${dmPolicy})`,
+      );
       return {
         allowed: false,
         shouldMarkRead: false,

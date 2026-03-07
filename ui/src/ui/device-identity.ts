@@ -1,3 +1,6 @@
+// SECURITY: accepted risk — device identity stored in localStorage is appropriate
+// for local-only threat model. The gateway is typically on localhost.
+
 import { getPublicKeyAsync, signAsync, utils } from "@noble/ed25519";
 
 type StoredIdentity = {

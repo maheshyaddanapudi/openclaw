@@ -18,6 +18,7 @@ import { resolveMarkdownTableMode } from "../../../config/markdown-tables.js";
 import { recordSessionMetaFromInbound } from "../../../config/sessions.js";
 import { logVerbose, shouldLogVerbose } from "../../../globals.js";
 import type { getChildLogger } from "../../../logging.js";
+import { redactIdentifier } from "../../../logging/redact-identifier.js";
 import { getAgentScopedMediaLocalRoots } from "../../../media/local-roots.js";
 import type { resolveAgentRoute } from "../../../routing/resolve-route.js";
 import {
@@ -220,8 +221,11 @@ export async function processMessage(params: {
     {
       connectionId: params.connectionId,
       correlationId,
-      from: params.msg.chatType === "group" ? conversationId : params.msg.from,
-      to: params.msg.to,
+      from:
+        params.msg.chatType === "group"
+          ? redactIdentifier(conversationId)
+          : redactIdentifier(params.msg.from),
+      to: redactIdentifier(params.msg.to),
       body: elide(combinedBody, 240),
       mediaType: params.msg.mediaType ?? null,
       mediaPath: params.msg.mediaPath ?? null,
@@ -232,7 +236,7 @@ export async function processMessage(params: {
   const fromDisplay = params.msg.chatType === "group" ? conversationId : params.msg.from;
   const kindLabel = params.msg.mediaType ? `, ${params.msg.mediaType}` : "";
   whatsappInboundLog.info(
-    `Inbound message ${fromDisplay} -> ${params.msg.to} (${params.msg.chatType}${kindLabel}, ${combinedBody.length} chars)`,
+    `Inbound message ${fromDisplay} -> ${redactIdentifier(params.msg.to)} (${params.msg.chatType}${kindLabel}, ${combinedBody.length} chars)`,
   );
   if (shouldLogVerbose()) {
     whatsappInboundLog.debug(`Inbound body: ${elide(combinedBody, 400)}`);
@@ -361,7 +365,7 @@ export async function processMessage(params: {
     pinnedMainDmRecipient
   ) {
     logVerbose(
-      `Skipping main-session last route update for ${dmRouteTarget} (pinned owner ${pinnedMainDmRecipient})`,
+      `Skipping main-session last route update for ${redactIdentifier(dmRouteTarget)} (pinned owner ${redactIdentifier(pinnedMainDmRecipient)})`,
     );
   }
 
@@ -421,7 +425,9 @@ export async function processMessage(params: {
           logVerboseMessage: shouldLog,
         });
         const fromDisplay =
-          params.msg.chatType === "group" ? conversationId : (params.msg.from ?? "unknown");
+          params.msg.chatType === "group"
+            ? redactIdentifier(conversationId)
+            : redactIdentifier(params.msg.from ?? "unknown");
         const hasMedia = Boolean(payload.mediaUrl || payload.mediaUrls?.length);
         whatsappOutboundLog.info(`Auto-replied to ${fromDisplay}${hasMedia ? " (media)" : ""}`);
         if (shouldLogVerbose()) {
@@ -437,7 +443,7 @@ export async function processMessage(params: {
               ? "block update"
               : "auto-reply";
         whatsappOutboundLog.error(
-          `Failed sending web ${label} to ${params.msg.from ?? conversationId}: ${formatError(err)}`,
+          `Failed sending web ${label} to ${redactIdentifier(params.msg.from ?? conversationId)}: ${formatError(err)}`,
         );
       },
       onReplyStart: params.msg.sendComposing,

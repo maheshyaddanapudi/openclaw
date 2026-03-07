@@ -438,13 +438,11 @@ export function isSecureWebSocketUrl(
     if (isPrivateOrLoopbackHost(parsed.hostname)) {
       return true;
     }
-    // Hostnames may resolve to private networks (for example in VPN/Tailnet DNS),
-    // but resolution is not available in this synchronous validator.
-    const hostForIpCheck =
-      parsed.hostname.startsWith("[") && parsed.hostname.endsWith("]")
-        ? parsed.hostname.slice(1, -1)
-        : parsed.hostname;
-    return net.isIP(hostForIpCheck) === 0;
+    // SECURITY: Only allow ws:// to literal private IP addresses.
+    // Hostnames (e.g. VPN/Tailnet DNS) require wss:// because DNS resolution
+    // cannot be verified synchronously. Use the gateway's TLS config for
+    // private-network hostnames instead.
+    return false;
   }
   return false;
 }

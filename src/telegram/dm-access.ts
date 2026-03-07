@@ -2,6 +2,7 @@ import type { Message } from "@grammyjs/types";
 import type { Bot } from "grammy";
 import type { DmPolicy } from "../config/types.js";
 import { logVerbose } from "../globals.js";
+import { redactIdentifier } from "../logging/redact-identifier.js";
 import { buildPairingReply } from "../pairing/pairing-messages.js";
 import { upsertChannelPairingRequest } from "../pairing/pairing-store.js";
 import { withTelegramApiErrorLogging } from "./api-logging.js";
@@ -83,8 +84,8 @@ export async function enforceTelegramDmAccess(params: {
       if (created) {
         logger.info(
           {
-            chatId: String(chatId),
-            senderUserId: sender.userId ?? undefined,
+            chatId: redactIdentifier(String(chatId)),
+            senderUserId: sender.userId ? redactIdentifier(sender.userId) : undefined,
             username: sender.username || undefined,
             firstName: sender.firstName,
             lastName: sender.lastName,
@@ -107,13 +108,15 @@ export async function enforceTelegramDmAccess(params: {
         });
       }
     } catch (err) {
-      logVerbose(`telegram pairing reply failed for chat ${chatId}: ${String(err)}`);
+      logVerbose(
+        `telegram pairing reply failed for chat ${redactIdentifier(String(chatId))}: ${String(err)}`,
+      );
     }
     return false;
   }
 
   logVerbose(
-    `Blocked unauthorized telegram sender ${sender.candidateId} (dmPolicy=${dmPolicy}, ${allowMatchMeta})`,
+    `Blocked unauthorized telegram sender ${redactIdentifier(sender.candidateId)} (dmPolicy=${dmPolicy}, ${allowMatchMeta})`,
   );
   return false;
 }

@@ -1,3 +1,6 @@
+// SECURITY: accepted risk — auth tokens in localStorage; gateway is local-only
+// by default. Consider sessionStorage for ephemeral sessions.
+
 import {
   clearDeviceAuthTokenFromStore,
   type DeviceAuthEntry,

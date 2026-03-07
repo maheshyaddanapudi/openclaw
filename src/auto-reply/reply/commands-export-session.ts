@@ -109,20 +109,34 @@ function parseExportArgs(commandBodyNormalized: string): { outputPath?: string }
   return { outputPath };
 }
 
+/**
+ * Validate that the resolved output path is within the allowed workspace directory.
+ * Prevents path traversal attacks that could write to arbitrary filesystem locations.
+ */
+function validateOutputPath(outputPath: string, workspaceDir: string): string | null {
+  const resolved = path.resolve(outputPath);
+  const normalizedWorkspace = path.resolve(workspaceDir);
+  // Ensure the output path is within the workspace directory
+  if (!resolved.startsWith(normalizedWorkspace + path.sep) && resolved !== normalizedWorkspace) {
+    return null;
+  }
+  return resolved;
+}
+
 export async function buildExportSessionReply(params: HandleCommandsParams): Promise<ReplyPayload> {
   const args = parseExportArgs(params.command.commandBodyNormalized);
 
   // 1. Resolve session file
   const sessionEntry = params.sessionEntry;
   if (!sessionEntry?.sessionId) {
-    return { text: "❌ No active session found." };
+    return { text: "No active session found." };
   }
 
   const storePath = resolveDefaultSessionStorePath(params.agentId);
   const store = loadSessionStore(storePath, { skipCache: true });
   const entry = store[params.sessionKey] as SessionEntry | undefined;
   if (!entry?.sessionId) {
-    return { text: `❌ Session not found: ${params.sessionKey}` };
+    return { text: "Session not found." };
   }
 
   let sessionFile: string;
@@ -132,14 +146,16 @@ export async function buildExportSessionReply(params: HandleCommandsParams): Pro
       entry,
       resolveSessionFilePathOptions({ agentId: params.agentId, storePath }),
     );
-  } catch (err) {
+  } catch {
+    // Do not leak filesystem paths in error messages returned to users
     return {
-      text: `❌ Failed to resolve session file: ${err instanceof Error ? err.message : String(err)}`,
+      text: "Failed to resolve session file.",
     };
   }
 
   if (!fs.existsSync(sessionFile)) {
-    return { text: `❌ Session file not found: ${sessionFile}` };
+    // Do not expose the internal session file path to the user
+    return { text: "Session file not found." };
   }
 
   // 2. Load session entries
@@ -167,16 +183,23 @@ export async function buildExportSessionReply(params: HandleCommandsParams): Pro
   // 5. Generate HTML
   const html = generateHtml(sessionData);
 
-  // 6. Determine output path
+  // 6. Determine output path (restricted to workspace directory)
   const timestamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
   const defaultFileName = `openclaw-session-${entry.sessionId.slice(0, 8)}-${timestamp}.html`;
-  const outputPath = args.outputPath
-    ? path.resolve(
-        args.outputPath.startsWith("~")
-          ? args.outputPath.replace("~", process.env.HOME ?? "")
-          : args.outputPath,
-      )
-    : path.join(params.workspaceDir, defaultFileName);
+  let outputPath: string;
+  if (args.outputPath) {
+    const rawPath = args.outputPath.startsWith("~")
+      ? args.outputPath.replace("~", process.env.HOME ?? "")
+      : args.outputPath;
+    const resolved = path.resolve(rawPath);
+    const validated = validateOutputPath(resolved, params.workspaceDir);
+    if (!validated) {
+      return { text: "Export path must be within the agent workspace directory." };
+    }
+    outputPath = validated;
+  } else {
+    outputPath = path.join(params.workspaceDir, defaultFileName);
+  }
 
   // Ensure directory exists
   const outputDir = path.dirname(outputPath);
@@ -192,12 +215,12 @@ export async function buildExportSessionReply(params: HandleCommandsParams): Pro
 
   return {
     text: [
-      "✅ Session exported!",
+      "Session exported.",
       "",
-      `📄 File: ${displayPath}`,
-      `📊 Entries: ${entries.length}`,
-      `🧠 System prompt: ${systemPrompt.length.toLocaleString()} chars`,
-      `🔧 Tools: ${tools.length}`,
+      `File: ${displayPath}`,
+      `Entries: ${entries.length}`,
+      `System prompt: ${systemPrompt.length.toLocaleString()} chars`,
+      `Tools: ${tools.length}`,
     ].join("\n"),
   };
 }

@@ -1,7 +1,8 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { getResolvedLoggerSettings } from "../../logging.js";
-import { clamp } from "../../utils.js";
+import { redactSensitiveText } from "../../logging/redact.js";
+import { clamp, displayPath } from "../../utils.js";
 import {
   ErrorCodes,
   errorShape,
@@ -130,6 +131,9 @@ async function readLogSlice(params: {
       lines = lines.slice(lines.length - limit);
     }
 
+    // Redact sensitive content (tokens, keys, passwords) before returning
+    lines = lines.map((line) => redactSensitiveText(line));
+
     cursor = size;
 
     return {
@@ -168,7 +172,8 @@ export const logsHandlers: GatewayRequestHandlers = {
         limit: p.limit ?? DEFAULT_LIMIT,
         maxBytes: p.maxBytes ?? DEFAULT_MAX_BYTES,
       });
-      respond(true, { file, ...result }, undefined);
+      // Strip home directory from file path to avoid leaking filesystem layout
+      respond(true, { file: displayPath(file), ...result }, undefined);
     } catch (err) {
       respond(
         false,

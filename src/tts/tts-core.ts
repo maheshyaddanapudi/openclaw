@@ -10,6 +10,10 @@ import {
 } from "../agents/model-selection.js";
 import { resolveModel } from "../agents/pi-embedded-runner/model.js";
 import type { OpenClawConfig } from "../config/config.js";
+import {
+  fetchWithSsrFGuard,
+  withTrustedEnvProxyGuardedFetchMode,
+} from "../infra/net/fetch-guard.js";
 import type {
   ResolvedTtsConfig,
   ResolvedTtsModelOverrides,
@@ -555,46 +559,49 @@ export async function elevenLabsTTS(params: {
   const normalizedNormalization = normalizeApplyTextNormalization(applyTextNormalization);
   const normalizedSeed = normalizeSeed(seed);
 
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  const url = new URL(`${normalizeElevenLabsBaseUrl(baseUrl)}/v1/text-to-speech/${voiceId}`);
+  if (outputFormat) {
+    url.searchParams.set("output_format", outputFormat);
+  }
 
-  try {
-    const url = new URL(`${normalizeElevenLabsBaseUrl(baseUrl)}/v1/text-to-speech/${voiceId}`);
-    if (outputFormat) {
-      url.searchParams.set("output_format", outputFormat);
-    }
-
-    const response = await fetch(url.toString(), {
-      method: "POST",
-      headers: {
-        "xi-api-key": apiKey,
-        "Content-Type": "application/json",
-        Accept: "audio/mpeg",
-      },
-      body: JSON.stringify({
-        text,
-        model_id: modelId,
-        seed: normalizedSeed,
-        apply_text_normalization: normalizedNormalization,
-        language_code: normalizedLanguage,
-        voice_settings: {
-          stability: voiceSettings.stability,
-          similarity_boost: voiceSettings.similarityBoost,
-          style: voiceSettings.style,
-          use_speaker_boost: voiceSettings.useSpeakerBoost,
-          speed: voiceSettings.speed,
+  // SSRF guard: the base URL is operator-configured, use trusted env proxy mode.
+  const { response, release } = await fetchWithSsrFGuard(
+    withTrustedEnvProxyGuardedFetchMode({
+      url: url.toString(),
+      init: {
+        method: "POST",
+        headers: {
+          "xi-api-key": apiKey,
+          "Content-Type": "application/json",
+          Accept: "audio/mpeg",
         },
-      }),
-      signal: controller.signal,
-    });
-
+        body: JSON.stringify({
+          text,
+          model_id: modelId,
+          seed: normalizedSeed,
+          apply_text_normalization: normalizedNormalization,
+          language_code: normalizedLanguage,
+          voice_settings: {
+            stability: voiceSettings.stability,
+            similarity_boost: voiceSettings.similarityBoost,
+            style: voiceSettings.style,
+            use_speaker_boost: voiceSettings.useSpeakerBoost,
+            speed: voiceSettings.speed,
+          },
+        }),
+      },
+      timeoutMs,
+      auditContext: "tts-elevenlabs",
+    }),
+  );
+  try {
     if (!response.ok) {
       throw new Error(`ElevenLabs API error (${response.status})`);
     }
 
     return Buffer.from(await response.arrayBuffer());
   } finally {
-    clearTimeout(timeout);
+    await release();
   }
 }
 
@@ -616,32 +623,35 @@ export async function openaiTTS(params: {
     throw new Error(`Invalid voice: ${voice}`);
   }
 
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), timeoutMs);
-
-  try {
-    const response = await fetch(`${baseUrl}/audio/speech`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
+  // SSRF guard: the base URL is operator-configured, use trusted env proxy mode.
+  const { response, release } = await fetchWithSsrFGuard(
+    withTrustedEnvProxyGuardedFetchMode({
+      url: `${baseUrl}/audio/speech`,
+      init: {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model,
+          input: text,
+          voice,
+          response_format: responseFormat,
+        }),
       },
-      body: JSON.stringify({
-        model,
-        input: text,
-        voice,
-        response_format: responseFormat,
-      }),
-      signal: controller.signal,
-    });
-
+      timeoutMs,
+      auditContext: "tts-openai",
+    }),
+  );
+  try {
     if (!response.ok) {
       throw new Error(`OpenAI TTS API error (${response.status})`);
     }
 
     return Buffer.from(await response.arrayBuffer());
   } finally {
-    clearTimeout(timeout);
+    await release();
   }
 }
 

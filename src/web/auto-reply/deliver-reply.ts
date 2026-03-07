@@ -2,6 +2,7 @@ import { chunkMarkdownTextWithMode, type ChunkMode } from "../../auto-reply/chun
 import type { ReplyPayload } from "../../auto-reply/types.js";
 import type { MarkdownTableMode } from "../../config/types.base.js";
 import { logVerbose, shouldLogVerbose } from "../../globals.js";
+import { redactIdentifier } from "../../logging/redact-identifier.js";
 import { convertMarkdownTables } from "../../markdown/tables.js";
 import { markdownToWhatsApp } from "../../markdown/whatsapp.js";
 import { sleep } from "../../utils.js";
@@ -43,7 +44,7 @@ export async function deliverWebReply(params: {
   const { replyResult, msg, maxMediaBytes, textLimit, replyLogger, connectionId, skipLog } = params;
   const replyStarted = Date.now();
   if (shouldSuppressReasoningReply(replyResult)) {
-    whatsappOutboundLog.debug(`Suppressed reasoning payload to ${msg.from}`);
+    whatsappOutboundLog.debug(`Suppressed reasoning payload to ${redactIdentifier(msg.from)}`);
     return;
   }
   const tableMode = params.tableMode ?? "code";
@@ -73,7 +74,7 @@ export async function deliverWebReply(params: {
         }
         const backoffMs = 500 * attempt;
         logVerbose(
-          `Retrying ${label} to ${msg.from} after failure (${attempt}/${maxAttempts - 1}) in ${backoffMs}ms: ${errText}`,
+          `Retrying ${label} to ${redactIdentifier(msg.from)} after failure (${attempt}/${maxAttempts - 1}) in ${backoffMs}ms: ${errText}`,
         );
         await sleep(backoffMs);
       }
@@ -90,7 +91,7 @@ export async function deliverWebReply(params: {
       if (!skipLog) {
         const durationMs = Date.now() - chunkStarted;
         whatsappOutboundLog.debug(
-          `Sent chunk ${index + 1}/${totalChunks} to ${msg.from} (${durationMs.toFixed(0)}ms)`,
+          `Sent chunk ${index + 1}/${totalChunks} to ${redactIdentifier(msg.from)} (${durationMs.toFixed(0)}ms)`,
         );
       }
     }
@@ -98,8 +99,8 @@ export async function deliverWebReply(params: {
       {
         correlationId: msg.id ?? newConnectionId(),
         connectionId: connectionId ?? null,
-        to: msg.from,
-        from: msg.to,
+        to: redactIdentifier(msg.from),
+        from: redactIdentifier(msg.to),
         text: elide(replyResult.text, 240),
         mediaUrl: null,
         mediaSizeBytes: null,
@@ -173,14 +174,14 @@ export async function deliverWebReply(params: {
         );
       }
       whatsappOutboundLog.info(
-        `Sent media reply to ${msg.from} (${(media.buffer.length / (1024 * 1024)).toFixed(2)}MB)`,
+        `Sent media reply to ${redactIdentifier(msg.from)} (${(media.buffer.length / (1024 * 1024)).toFixed(2)}MB)`,
       );
       replyLogger.info(
         {
           correlationId: msg.id ?? newConnectionId(),
           connectionId: connectionId ?? null,
-          to: msg.from,
-          from: msg.to,
+          to: redactIdentifier(msg.from),
+          from: redactIdentifier(msg.to),
           text: caption ?? null,
           mediaUrl,
           mediaSizeBytes: media.buffer.length,
@@ -190,7 +191,9 @@ export async function deliverWebReply(params: {
         "auto-reply sent (media)",
       );
     } catch (err) {
-      whatsappOutboundLog.error(`Failed sending web media to ${msg.from}: ${formatError(err)}`);
+      whatsappOutboundLog.error(
+        `Failed sending web media to ${redactIdentifier(msg.from)}: ${formatError(err)}`,
+      );
       replyLogger.warn({ err, mediaUrl }, "failed to send web media reply");
       if (index === 0) {
         const warning =
@@ -198,7 +201,9 @@ export async function deliverWebReply(params: {
         const fallbackTextParts = [remainingText.shift() ?? caption ?? "", warning].filter(Boolean);
         const fallbackText = fallbackTextParts.join("\n");
         if (fallbackText) {
-          whatsappOutboundLog.warn(`Media skipped; sent text-only to ${msg.from}`);
+          whatsappOutboundLog.warn(
+            `Media skipped; sent text-only to ${redactIdentifier(msg.from)}`,
+          );
           await msg.reply(fallbackText);
         }
       }
