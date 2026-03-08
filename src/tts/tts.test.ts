@@ -6,6 +6,18 @@ import type { OpenClawConfig } from "../config/config.js";
 import { withEnv } from "../test-utils/env.js";
 import * as tts from "./tts.js";
 
+// Bypass SSRF DNS-pinning guard so the test's global fetch mock is used directly.
+vi.mock("../infra/net/fetch-guard.js", async (importOriginal) => {
+  const orig: Record<string, unknown> = await importOriginal();
+  return {
+    ...orig,
+    fetchWithSsrFGuard: async (params: { url: string; init?: RequestInit }) => {
+      const response = await globalThis.fetch(params.url, params.init);
+      return { response, finalUrl: params.url, release: async () => {} };
+    },
+  };
+});
+
 vi.mock("@mariozechner/pi-ai", () => ({
   completeSimple: vi.fn(),
   // Some auth helpers import oauth provider metadata at module load time.
