@@ -110,6 +110,13 @@ plans/
 SECURITY-AUDIT-REPORT.md
 **/SECURITY-AUDIT-REPORT*.md
 
+# MCP server config (local/personal)
+.mcp.json
+
+# Generated onboarding docs
+docs/data-model-doc.md
+docs/flow-gateway-startup-doc.md
+
 # Local iOS signing overrides
 apps/ios/LocalSigning.xcconfig
 
