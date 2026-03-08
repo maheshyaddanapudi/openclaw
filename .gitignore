@@ -101,6 +101,11 @@ package-lock.json
 .agent/
 skills-lock.json
 
+# Claude Code configuration (project-local, not for source control)
+CLAUDE.md
+**/CLAUDE.md
+plans/
+
 # Local iOS signing overrides
 apps/ios/LocalSigning.xcconfig
 
