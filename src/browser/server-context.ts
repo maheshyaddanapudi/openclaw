@@ -204,20 +204,20 @@ export function createBrowserRouteContext(opts: ContextOptions): BrowserRouteCon
 
   const mapTabError = (err: unknown) => {
     if (err instanceof SsrFBlockedError) {
-      return { status: 400, message: err.message };
+      return { status: 400, message: "blocked by SSRF policy" };
     }
     if (err instanceof InvalidBrowserNavigationUrlError) {
-      return { status: 400, message: err.message };
+      return { status: 400, message: "invalid navigation URL" };
     }
     const msg = String(err);
     if (msg.includes("ambiguous target id prefix")) {
       return { status: 409, message: "ambiguous target id prefix" };
     }
     if (msg.includes("tab not found")) {
-      return { status: 404, message: msg };
+      return { status: 404, message: "tab not found" };
     }
     if (msg.includes("not found")) {
-      return { status: 404, message: msg };
+      return { status: 404, message: "not found" };
     }
     return null;
   };
