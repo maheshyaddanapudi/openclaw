@@ -106,6 +106,10 @@ CLAUDE.md
 **/CLAUDE.md
 plans/
 
+# Security audit reports (contain detailed vulnerability info — keep local)
+SECURITY-AUDIT-REPORT.md
+**/SECURITY-AUDIT-REPORT*.md
+
 # Local iOS signing overrides
 apps/ios/LocalSigning.xcconfig
 
