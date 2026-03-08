@@ -10,7 +10,7 @@ vi.mock("../agents/model-auth.js", async () => {
 
 // Bypass SSRF DNS-pinning guard so the test's global fetch mock is used directly.
 vi.mock("./remote-http.js", async (importOriginal) => {
-  const orig = await importOriginal();
+  const orig: Record<string, unknown> = await importOriginal();
   return {
     ...orig,
     withRemoteHttpResponse: async (params: {

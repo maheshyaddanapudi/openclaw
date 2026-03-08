@@ -15,6 +15,7 @@ export type { ChannelPlugin } from "../channels/plugins/types.plugin.js";
 export { createReplyPrefixOptions } from "../channels/reply-prefix.js";
 export type { OpenClawConfig } from "../config/config.js";
 export { createDedupeCache } from "../infra/dedupe.js";
+export { detectMime, extensionForMime, getFileExtension } from "../media/mime.js";
 export { fetchWithSsrFGuard } from "../infra/net/fetch-guard.js";
 export type { LookupFn, SsrFPolicy } from "../infra/net/ssrf.js";
 export { isBlockedHostnameOrIp, SsrFBlockedError } from "../infra/net/ssrf.js";
